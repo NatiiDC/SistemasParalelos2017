@@ -6,10 +6,10 @@
 /* Time in seconds from some point in the past */
 double dwalltime();
 
-void producto(double *A,double *B,double *C, int r,int N,int sizeMatrix,int sizeBlock);
+void producto(double *A, double *B, double *C, int r, int N, int sizeMatrix, int sizeBlock);
 void crearIdentidad(double *S, int sizeBlock, int sizeMatrix,int N,int r);
 void crearMatriz(double *S, int sizeMatrix);
-void imprimeMatriz(double *S,int N,int r);
+void imprimeMatriz(double *S, int N, int r);
 void imprimeVector(double *S, int sizeMatrix);
 
 
@@ -20,44 +20,43 @@ int main (int argc, char *argv[]){
  double *C; // Matriz C
  double timetick;
 
+  //El tamano de la matriz sera n= N*r , donde N y r se reciben
+  //por parametro se tendran N*N bloques de r*r cada uno
 
-//El tamano de la matriz sera n= N*r , donde N y r se reciben
-//por parametro se tendran N*N bloques de r*r cada uno
+  if (argc < 4){
+    printf("\n Falta un parametro ");
+    printf("\n 1. Cantidad de bloques por dimension ");
+    printf("\n 2. Dimension de cada bloque ");
+    printf("\n 3. 0/1 para imprimir/no imprimir resultados\n");
+    return 0;
+  }
 
-if (argc < 4){
-  printf("\n Falta un parametro ");
-  printf("\n 1. Cantidad de bloques por dimension ");
-  printf("\n 2. Dimension de cada bloque ");
-  printf("\n 3. 0/1 para imprimir/no imprimir resultados ");
-  return 0;
-}
+  int N = atoi(argv[1]);
+  int r = atoi(argv[2]);
+  int imprimir=atoi(argv[3]);
 
- int N = atoi(argv[1]);
- int r = atoi(argv[2]);
- int imprimir=atoi(argv[3]);
+  int n = N*r; //dimension de la matriz
+  int sizeMatrix=n*n; //cantidad total de datos matriz
+  int sizeBlock=r*r; //cantidad total de datos del bloque
+  int i;
 
- int n = N*r; //dimension de la matriz
- int sizeMatrix=n*n; //cantidad total de datos matriz
- int sizeBlock=r*r; //cantidad total de datos del bloque
- int i;
+  A = (double *)malloc(sizeMatrix*sizeof(double)); //aloca memoria para A
+  B = (double *)malloc(sizeMatrix*sizeof(double)); //aloca memoria para B
+  C = (double *)malloc(sizeMatrix*sizeof(double)); //aloca memoria para C
 
- A= (double *)malloc(sizeMatrix*sizeof(double)); //aloca memoria para A
- B= (double *)malloc(sizeMatrix*sizeof(double)); //aloca memoria para B
- C= (double *)malloc(sizeMatrix*sizeof(double)); //aloca memoria para C
-
- crearMatriz(A, sizeMatrix);			//Inicializa A 
- crearIdentidad(B,sizeBlock,sizeMatrix,N,r); //Inicializa B como matriz identidad
+  crearMatriz(A, sizeMatrix);			//Inicializa A
+  crearIdentidad(B,sizeBlock,sizeMatrix,N,r); //Inicializa B como matriz identidad
 
   timetick = dwalltime();
- producto(A,B,C,r,N,sizeMatrix,sizeBlock);
+  producto(A, B, C, r, N, sizeMatrix, sizeBlock);
   printf("Tiempo en segundos %f \n", dwalltime() - timetick);
 
-//tiempo
- if (imprimir ==1){
-     printf("\n\n  A (como esta almacenada): \n" );
+  //tiempo
+  if (imprimir ==1){
+    printf("\n\n  A (como esta almacenada): \n" );
     imprimeVector(A, sizeMatrix);
 
-     printf("\n\n  B (como esta almacenada): \n" );
+    printf("\n\n  B (como esta almacenada): \n" );
     imprimeVector(B,sizeMatrix);
 
     printf("\n\n  A: \n" );
@@ -69,7 +68,7 @@ if (argc < 4){
     printf("\n\n  C: \n" );
     imprimeMatriz(C,N,r);
 
- } 
+ }
 
 
  printf(" \n\n Realizando comprobacion ... \n" );
@@ -97,7 +96,7 @@ void producto(double *A,double *B,double *C, int r,int N,int sizeMatrix, int siz
 
  for (i=0; i<sizeMatrix ;i++)
 	  C[i]=0.0;
- 
+
 	for (I=0;I<N;I++){
 		for (J=0;J<N;J++){
 			despC = (I*N+J)*sizeBlock;
@@ -108,13 +107,13 @@ void producto(double *A,double *B,double *C, int r,int N,int sizeMatrix, int siz
 					for (j=0;j<r;j++){
 						desp = despC + i*r+j;
 						for (k=0;k<r;k++){
-							C[desp] += A[despA + i*r+k]*B[despB + k*r+j]; 
+							C[desp] += A[despA + i*r+k]*B[despB + k*r+j];
 						};
 					}
 				};
 			};
-		};	
-	}; 
+		};
+	};
 }
 
 
@@ -149,7 +148,7 @@ void imprimeVector(double *S, int sizeMatrix){
   printf("\n ");
   for(i=0 ;i<sizeMatrix;i++)
 	printf(" %f " ,S[i]);
- 
+
   printf("\n\n ");
 }
 
@@ -167,7 +166,7 @@ void imprimeMatriz(double *S,int N,int r){
 		   despB=(I*N+J)*r*r;
 	  for (j=0;j<r;j++){
 	     printf("%f ",S[despB+ i*r+j]);
-	
+
 	   };//end for j
 	};//end for J
         printf("\n ");
@@ -191,4 +190,3 @@ double dwalltime()
 	sec = tv.tv_sec + tv.tv_usec/1000000.0;
 	return sec;
 }
-

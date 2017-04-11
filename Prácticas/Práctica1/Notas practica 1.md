@@ -7,12 +7,16 @@ tamaños de matrices.
 
 Codigo sin modificar:
 
-*n = 100*  
-Tiempo en segundos 0.048112  
+*n = 128*  
+Tiempo en segundos 0.089556  
 Multiplicacion de matrices resultado correcto
 
-*n = 1000*  
-Tiempo en segundos 26.957387  
+*n = 512*  
+Tiempo en segundos 6.426406
+Multiplicacion de matrices resultado correcto
+
+*n = 1024*  
+Tiempo en segundos 54.319362  
 Multiplicacion de matrices resultado correcto
 
 
@@ -20,7 +24,7 @@ Multiplicacion de matrices resultado correcto
 ```c
 for(i = 0; i < N; i++) {
   for(j = 0; j < N; j++) {
-    aux = 0;
+    int aux = 0;
     for(k = 0; k < N; k++) {
       aux = aux + getValor(A,i,k,ORDENXFILAS)* getValor(B,k,j,ORDENXFILAS);
     }
@@ -30,12 +34,16 @@ for(i = 0; i < N; i++) {
 ```
 Acumulamos en una variable auxiliar las sumas de las multiplicaciones para un elemento de la matriz resultante y se la asignamos al terminar las multiplicaciones.
 
-*n = 100*  
-Tiempo en segundos 0.025637  
+*n = 128*  
+Tiempo en segundos 0.069374    
 Multiplicacion de matrices resultado correcto
 
-*n = 1000*  
-Tiempo en segundos 16.578740  
+*n = 512*  
+Tiempo en segundos 3.400423  
+Multiplicacion de matrices resultado correcto
+
+*n = 1024*  
+Tiempo en segundos 35.799943    
 Multiplicacion de matrices resultado correcto
 
 
@@ -50,13 +58,18 @@ Multiplicacion de matrices resultado correcto
  }
 ```
 
-*n = 100*  
-Tiempo en segundos 0.032066  
+*n = 128*  
+Tiempo en segundos 0.050814  
 Multiplicacion de matrices resultado correcto
 
-*n = 1000*  
-Tiempo en segundos 12.428136  
+*n = 512*  
+Tiempo en segundos 1.763525  
 Multiplicacion de matrices resultado correcto
+
+*n = 1024*  
+Tiempo en segundos 14.957786  
+Multiplicacion de matrices resultado correcto
+
 
 **Conclusión**  
 Ha mejorado notablemente la eficiencia haciendo menos llamadas a la matriz y cambiando de que forma guardamos la matriz.
@@ -70,19 +83,27 @@ Comparar los tiempos probando con diferentes tamaños de matrices, ¿Cuál
 es más rápido? ¿Por qué?
 
 *./SumMulMatrices 100*  
-Tiempo en segundos 0.019713   
+Tiempo en segundos 0.081049   
 Multiplicacion de matrices resultado correcto  
 
 *./SumMulMatricesOpt 100*  
-Tiempo en segundos 0.018189  
+Tiempo en segundos 0.069649  
 Multiplicacion de matrices resultado correcto
 
-*./SumMulMatrices 1000*  
-Tiempo en segundos 23.726947   
+*./SumMulMatrices 512*  
+Tiempo en segundos 3.108495  
 Multiplicacion de matrices resultado correcto  
 
-*./SumMulMatricesOpt 1000*  
-Tiempo en segundos 15.577054  
+*./SumMulMatricesOpt 512*  
+Tiempo en segundos 2.067240  
+Multiplicacion de matrices resultado correcto  
+
+*./SumMulMatrices 1024*  
+Tiempo en segundos 23.224687  
+Multiplicacion de matrices resultado correcto  
+
+*./SumMulMatricesOpt 1024*  
+Tiempo en segundos 16.640072  
 Multiplicacion de matrices resultado correcto  
 
 
@@ -98,6 +119,7 @@ multiplicación de matrices cuadradas de N*N utilizando la técnica por bloques.
 Ejecutar el algoritmo utilizando distintos tamaños de matrices y distintos tamaño
 de bloques, comparar los tiempos con respecto a la multiplicación de matrices
 optimizada del ejercicio 1.  
-Según el tamaño de las matrices y de bloque elegido
+
+> Según el tamaño de las matrices y de bloque elegido
 ¿Cuál es más rápido? ¿Por qué? ¿Cuál sería el tamaño de bloque óptimo para un
 determinado tamaño de matriz?
