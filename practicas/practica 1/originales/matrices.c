@@ -54,9 +54,9 @@ int main(int argc,char*argv[]){
 
  //Inicializa las matrices A y B en 1, el resultado sera una matriz con todos sus valores en N
   for(i=0;i<N;i++){
-    for(j=0;j<N;j++){
-  	  setValor(A,i,j,ORDENXFILAS,1);
-  	  setValor(B,i,j,ORDENXCOLUMNAS,1);
+   for(j=0;j<N;j++){
+	setValor(A,i,j,ORDENXFILAS,1);
+	setValor(B,i,j,ORDENXFILAS,1);
    }
   }
 
@@ -64,15 +64,13 @@ int main(int argc,char*argv[]){
  //Realiza la multiplicacion
 
   timetick = dwalltime();
-  double aux;
 
   for(i=0;i<N;i++){
-    for(j=0;j<N;j++){
-      aux = 0;
-      for(k=0;k<N;k++){
-        aux = aux + getValor(A,i,k,ORDENXFILAS)*getValor(B,k,j,ORDENXCOLUMNAS);
-      }
-      setValor(C,i,j,ORDENXFILAS,aux);
+   for(j=0;j<N;j++){
+    setValor(C,i,j,ORDENXFILAS,0);
+    for(k=0;k<N;k++){
+	   setValor(C,i,j,ORDENXFILAS, getValor(C,i,j,ORDENXFILAS) + getValor(A,i,k,ORDENXFILAS)*getValor(B,k,j,ORDENXFILAS));
+    }
    }
   }
 
@@ -83,7 +81,7 @@ int main(int argc,char*argv[]){
    for(j=0;j<N;j++){
 	check=check&&(getValor(C,i,j,ORDENXFILAS)==N);
    }
-  }
+  }   
 
   if(check){
    printf("Multiplicacion de matrices resultado correcto\n");

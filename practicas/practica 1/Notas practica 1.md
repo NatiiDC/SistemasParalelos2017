@@ -3,7 +3,7 @@
 > Analizar el algoritmo matrices.c que resuelve la multiplicación de matrices
 cuadradas de N*N, ¿dónde cree se producen demoras? ¿cómo se podría optimizar
 el código? Optimizar el código y comparar los tiempos probando con diferentes
-tamaños de matrices.
+tamaños de matrices.k
 
 Codigo sin modificar:
 
@@ -32,7 +32,7 @@ for(i = 0; i < N; i++) {
  }
 }
 ```
-Acumulamos en una variable auxiliar las sumas de las multiplicaciones para un elemento de la matriz resultante y se la asignamos al terminar las multiplicaciones.
+**Acumulamos en una variable auxiliar las sumas de las multiplicaciones para un elemento de la matriz resultante y se la asignamos al terminar las multiplicaciones.**
 
 *n = 128*  
 Tiempo en segundos 0.069374    
@@ -57,6 +57,7 @@ Multiplicacion de matrices resultado correcto
   }
  }
 ```
+**A la hora de crear las matrices, a una la ordenamos por filas y la otra por columnas, según como la recorramos**
 
 *n = 128*  
 Tiempo en segundos 0.050814  
@@ -70,9 +71,20 @@ Multiplicacion de matrices resultado correcto
 Tiempo en segundos 14.957786  
 Multiplicacion de matrices resultado correcto
 
+3ra mejora: a los getter y setter le sacamos el parametro de orden y creamos un set y get por cada orden. Entonces se remueve el if. Para el n = 1024 se nota la mejora.
+
+./matrices 1024  
+Tiempo en segundos 12.209155  
+Multiplicacion de matrices resultado correcto  
+
+4ta y ultima mejora: no usamos getters y setter, accedemos directo a la matriz.
+
+./matrices 1024  
+Tiempo en segundos 5.289600  
+Multiplicacion de matrices resultado correcto  
 
 **Conclusión**  
-Ha mejorado notablemente la eficiencia haciendo menos llamadas a la matriz y cambiando de que forma guardamos la matriz.
+Ha mejorado notablemente la eficiencia haciendo menos llamadas a la matriz y cambiando de que forma la guardamos.
 
 
 ### Ejercicio 2
