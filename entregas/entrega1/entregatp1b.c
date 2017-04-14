@@ -7,11 +7,10 @@ double dwalltime();
 void productoEscalar(double x, double* A, int N);
 double promedioMatriz(double *M, int n);
 
-void producto(double *A, double *B, double *C, int r, int cantidadBloquesPorLado, int sizeMatrix, int sizeBlock);
+void producto(double *A, double *B, double *C, int cantLadoBloque, int cantBloquesPorLado, int sizeMatrix, int sizeBlock);
 void suma(double *A, double *B, int n);
-void imprimirMatrizColumna(double* A, int cantidadBloquesPorLado);
-void imprimirMatrizFila(double* A, int cantidadBloquesPorLado);
-
+void imprimirMatrizColumna(double* A, int cantBloquesPorLado);
+void imprimirMatrizFila(double* A, int cantBloquesPorLado);
 
 int main( int argc, char* argv[] ) {
 
@@ -24,18 +23,17 @@ int main( int argc, char* argv[] ) {
 	if (argc < 4){
 		printf("\n Falta un parametro ");
 		printf("\n 1. Cantidad de bloques por lado de la matriz");
-		printf("\n 2. Tamaño de bloque");
+		printf("\n 2. Tamaño del lado bloque");
 		printf("\n 3. 1/0 para imprimir/no imprimir resultados\n");
 		return 0;
 	}
 
-	int cantidadBloquesPorLado = atoi(argv[1]);
-	int r = atoi(argv[2]);
+	int cantBloquesPorLado = atoi(argv[1]);
+	int cantLadoBloque = atoi(argv[2]);
 
-	int n = cantidadBloquesPorLado * r; //dimension de la matriz
-	int sizeMatrix=n*n; //cantidad total de datos matriz
-	int sizeBlock=r*r; //cantidad total de datos del bloque
-
+	int n = cantBloquesPorLado * cantLadoBloque; //dimension de la matriz
+	int sizeMatrix = n * n; //cantidad total de datos matriz
+	int sizeBlock = cantLadoBloque * cantLadoBloque; //cantidad total de datos del bloque
 
 	//Aloca memoria para las matrices
 	A = (double *)malloc(sizeMatrix*sizeof(double));
@@ -44,55 +42,54 @@ int main( int argc, char* argv[] ) {
 	D = (double *)malloc(sizeMatrix*sizeof(double));
 	E = (double *)malloc(sizeMatrix*sizeof(double));
 	F = (double *)malloc(sizeMatrix*sizeof(double));
-	AB = (double *)malloc(sizeMatrix*sizeof(double));
-	ABC = (double *)malloc(sizeMatrix*sizeof(double));
-	DE = (double *)malloc(sizeMatrix*sizeof(double));
-	DEF = (double *)malloc(sizeMatrix*sizeof(double));
+	AB = (double *)calloc(sizeMatrix, sizeof(double));
+	ABC = (double *)calloc(sizeMatrix, sizeof(double));
+	DE = (double *)calloc(sizeMatrix, sizeof(double));
+	DEF = (double *)calloc(sizeMatrix, sizeof(double));
 
-	//Inicializa las matrices en 1, el resultado sera una matriz con todos sus valores en cantidadBloquesPorLado
-	for (int i = 0; i < cantidadBloquesPorLado; i++) {
-		for (int j = 0; j < cantidadBloquesPorLado; j++) {
-			A[i * cantidadBloquesPorLado + j] = 1;
-			B[i + j * cantidadBloquesPorLado] = 1;
-			C[i + j * cantidadBloquesPorLado] = 1;
-			D[i * cantidadBloquesPorLado + j] = 1;
-			E[i + j * cantidadBloquesPorLado] = 1;
-			F[i + j * cantidadBloquesPorLado] = 1;
+	//Inicializa las matrices en 1, el resultado sera una matriz con todos sus valores en cantBloquesPorLado
+	for (int i = 0; i < cantBloquesPorLado; i++) {
+		for (int j = 0; j < cantBloquesPorLado; j++) {
+			A[i * cantBloquesPorLado + j] = 1;
+			B[i + j * cantBloquesPorLado] = 1;
+			C[i + j * cantBloquesPorLado] = 1;
+			D[i * cantBloquesPorLado + j] = 1;
+			E[i + j * cantBloquesPorLado] = 1;
+			F[i + j * cantBloquesPorLado] = 1;
 		}
 	}
 
-	for (int i = 0; i < cantidadBloquesPorLado; i++) {
-		for (int j = 0; j < cantidadBloquesPorLado; j++) {
-			AB[i*cantidadBloquesPorLado+j] = 0;
-			ABC[i+j*cantidadBloquesPorLado] = 0;
-			DE[i*cantidadBloquesPorLado+j] = 0;
-			DEF[i+j*cantidadBloquesPorLado] = 0;
+	for (int i = 0; i < cantBloquesPorLado; i++) {
+		for (int j = 0; j < cantBloquesPorLado; j++) {
+			AB[i * cantBloquesPorLado + j] = 0;
+			ABC[i+j * cantBloquesPorLado] = 0;
+			DE[i * cantBloquesPorLado + j] = 0;
+			DEF[i + j * cantBloquesPorLado] = 0;
 		}
 	}
 
 	//arrancan las operaciones y el contador
 	timetick = dwalltime();
 
-	promB = promedioMatriz(B, cantidadBloquesPorLado);
-	promD = promedioMatriz(D, cantidadBloquesPorLado);
+	promB = promedioMatriz(B, cantBloquesPorLado);
+	productoEscalar(promB, D, cantBloquesPorLado);
 
-	productoEscalar(promD, A, cantidadBloquesPorLado);
-	productoEscalar(promB, D, cantidadBloquesPorLado);
+	promD = promedioMatriz(D, cantBloquesPorLado);
+	productoEscalar(promD, A, cantBloquesPorLado);
 
-	producto(A, B, AB, r, cantidadBloquesPorLado, sizeMatrix, sizeBlock);
-	producto(AB, C, ABC, r, cantidadBloquesPorLado, sizeMatrix, sizeBlock);
-	producto(D, E, DE, r, cantidadBloquesPorLado, sizeMatrix, sizeBlock);
-	producto(DE, F, DEF, r, cantidadBloquesPorLado, sizeMatrix, sizeBlock);
+	producto(A, B, AB, cantLadoBloque, cantBloquesPorLado, sizeMatrix, sizeBlock);
+	producto(AB, C, ABC, cantLadoBloque, cantBloquesPorLado, sizeMatrix, sizeBlock);
+	producto(D, E, DE, cantLadoBloque, cantBloquesPorLado, sizeMatrix, sizeBlock);
+	producto(DE, F, DEF, cantLadoBloque, cantBloquesPorLado, sizeMatrix, sizeBlock);
 
-	suma(ABC, DEF, cantidadBloquesPorLado);
+	suma(ABC, DEF, cantBloquesPorLado);
 
 	printf("Tiempo en segundos %f \n", dwalltime() - timetick);
 
-
 	//Verifica el resultado
-	for ( i=0; i<cantidadBloquesPorLado; i++) {
-		for (j=0; j<cantidadBloquesPorLado; j++) {
-			check = check && ( ABC[i*cantidadBloquesPorLado+j] == (2*pow(cantidadBloquesPorLado, 2)) );
+	for ( i=0; i<cantBloquesPorLado; i++) {
+		for (j=0; j<cantBloquesPorLado; j++) {
+			check = check && ( ABC[i*cantBloquesPorLado+j] == (2*pow(cantBloquesPorLado, 2)) );
 		}
 	}
 
@@ -133,30 +130,26 @@ double promedioMatriz(double *M, int n){
 }
 
 
-void producto(double *A, double *B, double *C, int r, int cantidadBloquesPorLado, int sizeMatrix, int sizeBlock){
+void producto(double *A, double *B, double *C, int cantLadoBloque, int cantBloquesPorLado, int sizeMatrix, int sizeBlock){
 	int I,J,K,i,j,k;
 	int despA, despB, despC,desp;
 	double aux;
 
-	for (i=0; i<sizeMatrix ;i++) {
-		C[i]=0.0;
-	}
+	for (I = 0; I < cantBloquesPorLado; I++) { // cantidad de bloques.
+		for (J = 0; J < cantBloquesPorLado; J++) {
+			despC = (I*cantBloquesPorLado+J) * sizeBlock;
 
-	for (I=0; I<cantidadBloquesPorLado; I++) { // cantidad de bloques.
-		for (J=0; J<cantidadBloquesPorLado; J++) {
-			despC = (I*cantidadBloquesPorLado+J)*sizeBlock;
+			for (K = 0; K < cantBloquesPorLado; K++) {
+				despA = (I*cantBloquesPorLado+K) * sizeBlock;
+				despB = (K*cantBloquesPorLado+J) * sizeBlock;
 
-			for (K=0; K<cantidadBloquesPorLado; K++) {
-				despA = (I*cantidadBloquesPorLado+K) * sizeBlock;
-				despB = (K*cantidadBloquesPorLado+J) * sizeBlock;
-
-				for (i=0; i<r; i++) {
-					for (j=0; j<r; j++) {
-						desp = despC + i*r+j;
+				for (i = 0; i < cantLadoBloque; i++) {
+					for (j = 0; j < cantLadoBloque; j++) {
+						desp = despC + i*cantLadoBloque + j;
 						aux = 0;
 
-						for (k=0;k<r;k++){
-							aux += A[despA + i*r+k]*B[despB + k*r+j];
+						for (k = 0; k < cantLadoBloque; k++){
+							aux += A[despA + i*cantLadoBloque +k] * B[despB + k*cantLadoBloque + j];
 						};
 
 						C[desp] += aux;
@@ -173,22 +166,22 @@ void suma(double *A, double *B, int N) {
 	}
 }
 
-void imprimirMatrizFila(double* A, int cantidadBloquesPorLado) {
+void imprimirMatrizFila(double* A, int cantBloquesPorLado) {
 	printf("\n");
-	for(int i=0; i<cantidadBloquesPorLado; i++){
-		for(int j=0; j<cantidadBloquesPorLado; j++){
-			printf("%d ", (int) A[i*cantidadBloquesPorLado+j]);
+	for(int i=0; i<cantBloquesPorLado; i++){
+		for(int j=0; j<cantBloquesPorLado; j++){
+			printf("%d ", (int) A[i*cantBloquesPorLado+j]);
 		}
 		printf("\n");
 	}
 	printf("\n");
 }
 
-void imprimirMatrizColumna(double* A, int cantidadBloquesPorLado) {
+void imprimirMatrizColumna(double* A, int cantBloquesPorLado) {
 	printf("\n");
-	for(int i=0;i<cantidadBloquesPorLado;i++){
-		for(int j=0;j<cantidadBloquesPorLado;j++){
-			printf("%d ", (int) A[i+j*cantidadBloquesPorLado]);
+	for(int i=0;i<cantBloquesPorLado;i++){
+		for(int j=0;j<cantBloquesPorLado;j++){
+			printf("%d ", (int) A[i+j*cantBloquesPorLado]);
 		}
 		printf("\n");
 	}
