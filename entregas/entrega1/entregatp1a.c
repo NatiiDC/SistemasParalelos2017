@@ -9,7 +9,6 @@ Donde A, B, C, D, E y F son matrices de NxN. d̅ y b̅ son los promedios de los 
 de los elementos de las matrices D y B, respectivamente.
 */
 
-
 /* Time in seconds from some point in the past */
 double dwalltime();
 void productoEscalar(double x, double* A, int N);
@@ -26,20 +25,23 @@ int main( int argc, char* argv[] ) {
   double promB = 0, promD = 0;
 	double timetick;
 	int N;
-	int i,j;
-	int check=1;
+	int iter = 1;
 
 	//Controla los argumentos al programa
 	if (argc < 2) {
-	printf("\n Falta un argumento: N dimension de la matriz \n");
-	printf("\n Compilar:\ngcc -o entregatp1a entregatpa.c -lm -O3\n");
-
+		printf("\n Falta un argumento: N dimension de la matriz \n");
+		printf("\n 2do argumento opcional: cantidad de iteraciones \n");
+		printf("\n Compilar:\ngcc -o entregatp1a entregatpa.c -lm -O3\n");
 
 		return 0;
 	}
 
+	if (argc == 3) {
+		iter = atoi(argv[2]);
+	}
+
 	N = atoi(argv[1]);
-  
+
   //Aloca memoria para las matrices
   A = (double*)malloc(sizeof(double)*N*N);
   B = (double*)malloc(sizeof(double)*N*N);
@@ -47,10 +49,10 @@ int main( int argc, char* argv[] ) {
   D = (double*)malloc(sizeof(double)*N*N);
   E = (double*)malloc(sizeof(double)*N*N);
   F = (double*)malloc(sizeof(double)*N*N);
-  AB = (double*)malloc(sizeof(double)*N*N);
-  ABC = (double*)malloc(sizeof(double)*N*N);
-  DE = (double*)malloc(sizeof(double)*N*N);
-  DEF = (double*)malloc(sizeof(double)*N*N);
+  AB = (double*)calloc(N*N, sizeof(double));
+  ABC = (double*)calloc(N*N, sizeof(double));
+  DE = (double*)calloc(N*N, sizeof(double));
+  DEF = (double*)calloc(N*N, sizeof(double));
 
   //Inicializa las matrices A y B en 1, el resultado sera una matriz con todos sus valores en N
   for(int i = 0; i < N; i++) {
@@ -63,16 +65,7 @@ int main( int argc, char* argv[] ) {
    		F[i+j*N] = 1;
     }
   }
-  
-  for(int i = 0; i < N; i++) {
-    for(int j = 0; j < N; j++) {
-      AB[i*N+j] = 0;
-      ABC[i+j*N] = 0;
-      DE[i*N+j] = 0;
-      DEF[i+j*N] = 0;
-    }
-  }
-  
+
 /*
   printf("A: ");
   imprimirMatrizFila(A, N);
@@ -88,37 +81,29 @@ int main( int argc, char* argv[] ) {
   imprimirMatrizColumna(F, N);
 */
 
-  //arrancan las operaciones y el contador
-  timetick = dwalltime();
-  
-  promB = promedioMatriz(B, N);
-  promD = promedioMatriz(D, N);
-  
-  productoEscalar(promD, A, N);  
-  productoEscalar(promB, D, N);
+	double promedio = 0;
+	for (int a = 0; a < iter; a++) {
 
-	producto(AB, A, B, N);
-  producto(ABC, AB, C, N);
-  producto(DE, D, E, N);
-  producto(DEF, DE, F, N);
+		//arrancan las operaciones y el contador
+	  timetick = dwalltime();
 
-	suma(ABC, DEF, N);
-  
-  printf("Tiempo en segundos %f \n", dwalltime() - timetick);
-  
+	  promB = promedioMatriz(B, N);
+	  promD = promedioMatriz(D, N);
 
-	//Verifica el resultado
-	for( i=0; i<N; i++){
-		for(j=0; j<N; j++){
-			check = check && ( ABC[i*N+j] == (2*pow(N, 2)) );
-		}
+	  productoEscalar(promD, A, N);
+	  productoEscalar(promB, D, N);
+
+		producto(AB, A, B, N);
+	  producto(ABC, AB, C, N);
+	  producto(DE, D, E, N);
+	  producto(DEF, DE, F, N);
+
+		suma(ABC, DEF, N);
+
+		promedio += dwalltime() - timetick;
 	}
-
-  if(check){
-   printf("Multiplicacion de matrices resultado correcto\n");
-  }else{
-   printf("Multiplicacion de matrices resultado erroneo\n");
-  }
+	promedio = promedio / iter;
+	printf("Tiempo promedio para %d iteracion/es: %f \n", iter, promedio);
 
   free(A);
   free(B);
@@ -130,7 +115,9 @@ int main( int argc, char* argv[] ) {
   free(ABC);
   free(DE);
   free(DEF);
-  
+
+	return promedio;
+
 }
 
 void productoEscalar(double x, double* A, int N) {
@@ -142,43 +129,41 @@ void productoEscalar(double x, double* A, int N) {
 double promedioMatriz(double *M, int n){
 	double total = 0.0;
 	int i;
-	
+
 	for (i = 0; i < n*n; i++){
 		total += M[i];
 	}
-  
+
   total = total / (n*n);
 
 	return total;
 }
 
 void producto(double *ret, double *pri, double *seg, int N){
-
 	int i,j,k;
 	double aux;
 
-	for(i=0;i<N;i++){
-    for(j=0;j<N;j++){
+	for(i = 0; i < N; i++){
+    for(j = 0; j < N; j++){
       aux = 0;
-      for(k=0;k<N;k++){
-        aux = aux + pri[i*N+k] * seg[k+j*N];
+      for(k = 0; k < N; k++){
+        aux = aux + pri[i*N + k] * seg[k + j*N];
       }
-      ret[i*N+j] = aux;
+      ret[i*N + j] = aux;
    }
   }
-
 }
 
 void suma(double *A, double *B, int N) {
-  for(int i=0;i<(N*N);i++){
+  for(int i = 0; i < (N*N); i++){
     A[i] += B[i];
   }
 }
 
 void imprimirMatrizFila(double* A, int N) {
   printf("\n");
-  for(int i=0;i<N;i++){
-    for(int j=0;j<N;j++){
+  for(int i=0; i<N; i++){
+    for(int j=0; j<N; j++){
       printf("%d ", (int) A[i*N+j]);
     }
     printf("\n");
@@ -189,7 +174,7 @@ void imprimirMatrizFila(double* A, int N) {
 void imprimirMatrizColumna(double* A, int N) {
   printf("\n");
   for(int i=0;i<N;i++){
-    for(int j=0;j<N;j++){
+    	for(int j=0;j<N;j++){
       printf("%d ", (int) A[i+j*N]);
     }
     printf("\n");
