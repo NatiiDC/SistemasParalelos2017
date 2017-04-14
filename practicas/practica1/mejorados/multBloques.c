@@ -157,8 +157,8 @@ void imprimeVector(double *S, int sizeMatrix){
 
 
 void imprimeMatriz(double *S,int N,int r){
-// Imprime la matriz pasada por parametro
-// N es la cantidad de bloques, r dimension de cada bloque
+  // Imprime la matriz pasada por parametro
+  // N es la cantidad de bloques, r dimension de cada bloque
   int i,j,I,J,despB;
 
   printf("Contenido de la matriz: \n" );
