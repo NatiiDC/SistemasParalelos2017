@@ -6,7 +6,6 @@ double dwalltime();
 
 void productoEscalar(double x, double* A, int N);
 double promedioMatriz(double *M, int n);
-
 void producto(double *A, double *B, double *C, int cantLadoBloque, int cantBloquesPorLado, int sizeMatrix, int sizeBlock);
 void suma(double *A, double *B, int n);
 void imprimirMatrizColumna(double* A, int cantBloquesPorLado);
@@ -62,7 +61,6 @@ int main( int argc, char* argv[] ) {
 		}
 	}
 
-
 	double promedio = 0;
 	for (int a = 0; a < iter; a++) {
 		//arrancan las operaciones y el contador
@@ -81,7 +79,6 @@ int main( int argc, char* argv[] ) {
 
 		suma(ABC, DEF, cantBloquesPorLado);
 
-		// printf("Tiempo en segundos %f \n", dwalltime() - timetick);
 		promedio += dwalltime() - timetick;
 	}
 	promedio = promedio / iter;
@@ -108,11 +105,9 @@ void productoEscalar(double x, double* A, int N) {
 
 double promedioMatriz(double *M, int n){
 	double total = 0.0;
-
 	for (int i = 0; i < n*n; i++){
 		total += M[i];
 	}
-
 	return total / (n*n);
 }
 
@@ -141,10 +136,10 @@ void producto(double *A, double *B, double *C, int cantLadoBloque, int cantBloqu
 						C[desp] += temp;
 						temp = 0;
 					}
-				};
-			};
-		};
-	};
+				}
+			}
+		}
+	}
 }
 
 void suma(double *A, double *B, int N) {
