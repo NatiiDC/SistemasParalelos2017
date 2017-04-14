@@ -32,7 +32,7 @@ int main( int argc, char* argv[] ) {
 	//Controla los argumentos al programa
 	if (argc < 2) {
 	printf("\n Falta un argumento: N dimension de la matriz \n");
-	printf("\n Compilar:\ngcc -o entregatp1 entregatp1.c -lm -O3\n");
+	printf("\n Compilar:\ngcc -o entregatp1a entregatpa.c -lm -O3\n");
 
 
 		return 0;
