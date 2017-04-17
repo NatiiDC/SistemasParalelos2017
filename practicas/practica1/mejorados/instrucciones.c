@@ -1,6 +1,6 @@
 #include<stdio.h>
 #include <sys/time.h>
-#define cant 1000000000 
+#define cant 1000000000
 
 /**********Para calcular tiempo*************************************/
 double dwalltime()
@@ -15,7 +15,7 @@ double dwalltime()
 /****************************************************************/
 
 int main(int argc, char *argv[]){
-  double x=39916801, y=719;
+  double x=1073741824, y=512;
   double timetick, timeend;
   double resultado;
   long long int i;
@@ -29,7 +29,7 @@ int main(int argc, char *argv[]){
   timeend = dwalltime();
   printf(" Tiempo total en segundos %.10lf \n", (timeend - timetick));
   printf(" Tiempo promedio en segundos %.10lf \n", (timeend - timetick)/cant);
-  
+
   /*Resta*/
   printf("Resta...\n");
   timetick = dwalltime();
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]){
   timeend = dwalltime();
   printf(" Tiempo total en segundos %.10lf \n", (timeend - timetick));
   printf(" Tiempo promedio en segundos %.10lf \n", (timeend - timetick)/cant);
-  
+
   /*Producto*/
   printf("Producto...\n");
   timetick = dwalltime();
@@ -49,7 +49,7 @@ int main(int argc, char *argv[]){
   timeend = dwalltime();
   printf(" Tiempo total en segundos %.10lf \n", (timeend - timetick));
   printf(" Tiempo promedio en segundos %.10lf \n", (timeend - timetick)/cant);
-  
+
   /*Division*/
   printf("Division...\n");
   timetick = dwalltime();

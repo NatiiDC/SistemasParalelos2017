@@ -135,3 +135,28 @@ optimizada del ejercicio 1.
 > Según el tamaño de las matrices y de bloque elegido
 ¿Cuál es más rápido? ¿Por qué? ¿Cuál sería el tamaño de bloque óptimo para un
 determinado tamaño de matriz?
+
+Organiza a las matrices en la memoria por bloques. Dados un N (cantidad de bloques del lado de la matriz) y un r (cantidad de elementos por lado del bloque), un bloque es una submatriz de rxr elementos, y hay NxN bloques en la matriz.
+
+En general, el tamaño de bloque que mejores resultados da, es del de 64.
+
+### Ejercicio 5
+
+> El algoritmo fib.c resuelve la serie de Fibonacci para un numero N dado utilizando dos métodos, el método recursivo y el método iterativo. Analizar los tiempos de ambos métodos ¿Cuál es más rápido? ¿Por qué?
+
+Es más rápido de la forma iterativa. El Recursivo, a medida que aumenta el N, va repitiendo las funciones con el mismo parametro. Es poco eficiente.
+
+
+### Ejercicio 7
+
+> El algoritmo instrucciones.c compara el tiempo de ejecución de las operaciones básicas suma (+), resta (-), multiplicación ( * ) y división (/) para dos operandos dados x e y. ¿Qué análisis se puede hacer de cada operación? ¿Qué ocurre si x e y son potencias de 2?
+
+Para la suma, resta y la multiplicacion fueron los mismos tiempos. Dado que la multiplicacion en numeros binarios es un corrimiento de los bits, no genera mucho mas procesamiento. Si llevó más tiempo la división, lo cual es razonable.
+
+Cuando la división es con numeros de potencias de 2, es reduce significativamente el tiempo. Debe ser que es más sencillo de procesar las potencias de dos en el sistema binario.
+
+### Ejercicio 8
+
+> En función del ejercicio 7 analizar el algoritmo instrucciones2.c que resuelve la una operación binaria con dos operaciones distintas.
+
+Mientras no sean potencias de 2, la división será mas lenta de la multiplicación.
