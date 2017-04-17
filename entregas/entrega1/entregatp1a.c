@@ -14,6 +14,7 @@ double dwalltime();
 void productoEscalar(double x, double* A, int N);
 double promedioMatriz(double *M, int n);
 void producto(double *ret, double *pri, double *seg, int n);
+void dobleProducto(double *ret, double *pri, double *seg, double *ret2, double *pri2, double *seg2, int n);
 void suma(double *A, double *B, int n);
 void imprimirMatrizColumna(double* A, int N);
 void imprimirMatrizFila(double* A, int N);
@@ -31,7 +32,7 @@ int main( int argc, char* argv[] ) {
 	if (argc < 2) {
 		printf("\n Falta un argumento: N dimension de la matriz \n");
 		printf("\n 2do argumento opcional: cantidad de iteraciones \n");
-		printf("\n Compilar:\ngcc -o entregatp1a entregatpa.c -lm -O3\n");
+		printf("\n Compilar:\ngcc -o entregatp1a entregatp1a.c -lm -O3\n");
 
 		return 0;
 	}
@@ -92,11 +93,14 @@ int main( int argc, char* argv[] ) {
 
 	  productoEscalar(promD, A, N);
 	  productoEscalar(promB, D, N);
+		
+		// producto(AB, A, B, N);
+	  // producto(ABC, AB, C, N);
+	  // producto(DE, D, E, N);
+	  // producto(DEF, DE, F, N);
 
-		producto(AB, A, B, N);
-	  producto(ABC, AB, C, N);
-	  producto(DE, D, E, N);
-	  producto(DEF, DE, F, N);
+		dobleProducto(AB, A, B, DE, D, E, N);
+		dobleProducto(ABC, AB, C, DEF, DE, F, N);
 
 		suma(ABC, DEF, N);
 
@@ -153,6 +157,24 @@ void producto(double *ret, double *pri, double *seg, int N){
    }
   }
 }
+
+void dobleProducto(double *ret, double *pri, double *seg, double *ret2, double *pri2, double *seg2, int N){
+	int i,j,k;
+	double aux, aux2;
+
+	for(i = 0; i < N; i++){
+    for(j = 0; j < N; j++){
+      aux = 0;
+      for(k = 0; k < N; k++){
+				aux = aux + pri[i*N + k] * seg[k + j*N];
+        aux2 = aux2 + pri2[i*N + k] * seg2[k + j*N];
+      }
+			ret[i*N + j] = aux;
+      ret2[i*N + j] = aux2;
+   }
+  }
+}
+
 
 void suma(double *A, double *B, int N) {
   for(int i = 0; i < (N*N); i++){
