@@ -6,7 +6,6 @@
 /* Time in seconds from some point in the past */
 double dwalltime();
 void* buscar(void * num);
-void imprimirMatrizFila(double* A);
 
 typedef struct My_threads {
   int id;
@@ -14,8 +13,9 @@ typedef struct My_threads {
   int result;
 } my_thread;
 
-int count_threads = 2, N, find;
-int *vector;
+int count_threads = 2, find;
+long long *vector;
+long long N;
 
 struct My_threads* p_threads;
 
@@ -34,16 +34,16 @@ int main(int argc, char const *argv[]) {
 
   double timetick;
   int iter = 50;
-  N = atoi(argv[1]);
+  N = atoll(argv[1]);
   find = atoi(argv[2]);
 
   printf("CANTIDAD DE THREADS: %d.\n", count_threads);
 
-  vector = (int*)malloc(sizeof(int) * N);
+  vector = (long long*)malloc(sizeof(long long) * N);
   p_threads = malloc(sizeof(struct My_threads) * count_threads);
 
   for (int it = 0; it < N; it++) {
-    vector[it] = (it*2)%100;
+    vector[it] = ((it*2)+(it*3))%100;
   }
 
   double promedio = 0;
@@ -51,8 +51,8 @@ int main(int argc, char const *argv[]) {
 
   for (int a = 0; a < iter; a++) {
 
-    timetick = dwalltime();
     tot = 0;
+    timetick = dwalltime();
 
     for (int i = 0; i < count_threads; i++) {
       p_threads[i].id = i;
@@ -82,10 +82,10 @@ void* buscar(void* num){
 
   int desde = (int)(N / count_threads) * desplazamiento;
   int hasta = (int)(N / count_threads) * (desplazamiento + 1);
-	int ocur = 0;
+  int ocur = 0;
   // printf("\n%d",*(int *)num);
   // printf("\nid:%d \ndesde: %d; hasta: %d\n", desplazamiento, desde, hasta );
-	for(int i = desde; i < hasta; i++){
+  for(int i = desde; i < hasta; i++){
     if (vector[i] == find) {
       ocur++;
     }
@@ -95,16 +95,6 @@ void* buscar(void* num){
   pthread_exit(0);
 }
 
-void imprimirMatrizFila(double* A) {
-  printf("\n");
-  for(int i=0; i<N; i++){
-    for(int j=0; j<N; j++){
-      printf("%d ", (int) A[i*N+j]);
-    }
-    printf("\n");
-  }
-  printf("\n");
-}
 
 /*****************************************************************/
 
@@ -124,6 +114,13 @@ double dwalltime()
 /*
 CONCLUSION DE REITERADAS EJECUCIONES:
 
+Mi maquina:
+
 Sin optimizar, a partir de 25.000 elementos aprox. es más rapido con 4 threads.
 Optimizado, a partir de 30.000.000 de elementos aprox. es un poco más rápido con 4 threads.
+
+Sala de PC PostGrado
+
+Sin optimizar, a partir de 350.000 elementos aprox. es más rapido con 4 threads
+Optimizar, a partir de 450.000 elementos aprox. es más rapido con 4 threads
 */
