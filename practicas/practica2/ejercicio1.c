@@ -148,4 +148,29 @@ Tiempo promedio para 10 iteracion/es: 6.877718
 $ ./ejercicio1 2048 4
 Tiempo promedio para 10 iteracion/es: 5.981148
 
+
+Aula PC PostGrado Maquina 13
+
+gcc -pthread -o ejercicio1 ejercicio1.c -O3
+
+./ejercicio1 1024
+Tiempo promedio para 10 iteracion/es: 0.595256 
+./ejercicio1 1024 4
+Tiempo promedio para 10 iteracion/es: 0.309369 
+./ejercicio1 2048 
+Tiempo promedio para 10 iteracion/es: 4.846422 
+./ejercicio1 2048 4
+Tiempo promedio para 10 iteracion/es: 3.132956 
+
+gcc -pthread -o ejercicio1 ejercicio1.c
+
+./ejercicio1 1024
+Tiempo promedio para 5 iteracion/es: 1.966145 
+./ejercicio1 1024 4
+Tiempo promedio para 5 iteracion/es: 1.026348 
+./ejercicio1 2048
+Tiempo promedio para 5 iteracion/es: 15.750792 
+./ejercicio1 2048 4
+Tiempo promedio para 5 iteracion/es: 8.495388
+
 */
