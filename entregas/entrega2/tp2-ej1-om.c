@@ -5,7 +5,7 @@
 #include <omp.h>
 
 /* Time in seconds from some point in the past */
-double dwalltime();
+long double dwalltime();
 
 void productoEscalar(double x, double* A, int N);
 double promedioMatriz(double *M, int n);
@@ -17,8 +17,8 @@ void imprimirMatrizFila(double* A, int N);
 double *A, *B, *C ,*D ,*E ,*F, *AB, *ABC, *DE, *DEF;
 double promB = 0, promD = 0;
 int numThreads = 2;
-double timetick;
-int N;
+long double timetick;
+int N, iter = 2;
 
 int main( int argc, char* argv[] ) {
 
@@ -32,10 +32,14 @@ int main( int argc, char* argv[] ) {
 	}
 
   N = atoi(argv[1]);
-	if (argc == 3 && atoi(argv[2]) == 4) {
+	if (argc >= 3 && atoi(argv[2]) == 4) {
     numThreads = 4;
 	}
   omp_set_num_threads(numThreads);
+
+	if (argc == 4) {
+		iter = atoi(argv[3]);
+	}
 
   printf("CANTIDAD DE THREADS: %d.\n", numThreads);
 
@@ -63,37 +67,28 @@ int main( int argc, char* argv[] ) {
     }
   }
 
-/*
-  printf("A: ");
-  imprimirMatrizFila(A, N);
-  printf("B: ");
-  imprimirMatrizColumna(B, N);
-  printf("C: ");
-  imprimirMatrizColumna(C, N);
-  printf("D: ");
-  imprimirMatrizFila(D, N);
-  printf("E: ");
-  imprimirMatrizColumna(E, N);
-  printf("F: ");
-  imprimirMatrizColumna(F, N);
-*/
+	long double promedio = 0;
+	for (int a = 0; a < iter; a++) {
 
-	//arrancan las operaciones y el contador
-  timetick = dwalltime();
+		//arrancan las operaciones y el contador
+	  timetick = dwalltime();
 
-  promB = promedioMatriz(B, N);
-  promD = promedioMatriz(D, N);
+	  promB = promedioMatriz(B, N);
+	  promD = promedioMatriz(D, N);
 
-  productoEscalar(promD, A, N);
-  productoEscalar(promB, D, N);
+	  productoEscalar(promD, A, N);
+	  productoEscalar(promB, D, N);
 
-	producto(AB, A, B, N);
-  producto(ABC, AB, C, N);
-  producto(DE, D, E, N);
-  producto(DEF, DE, F, N);
+		producto(AB, A, B, N);
+	  producto(ABC, AB, C, N);
+	  producto(DE, D, E, N);
+	  producto(DEF, DE, F, N);
 
-	suma(ABC, DEF, N);
-	printf("Tiempo: %f\n", (dwalltime() - timetick));
+		suma(ABC, DEF, N);
+		promedio += (dwalltime() - timetick);
+	}
+	promedio = promedio / iter;
+	printf("Tiempo promedio para %d iteracion/es: %LF \n", iter, promedio);
 
   free(A);
   free(B);
@@ -178,9 +173,9 @@ void imprimirMatrizColumna(double* A, int N) {
 
 #include <sys/time.h>
 
-double dwalltime()
+long double dwalltime()
 {
-	double sec;
+	long double sec;
 	struct timeval tv;
 
 	gettimeofday(&tv,NULL);
