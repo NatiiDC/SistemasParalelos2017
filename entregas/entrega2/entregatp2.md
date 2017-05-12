@@ -1,6 +1,8 @@
-#### Ejercicio 1
+### Ejercicio 1
 
 promedio de 20 iteraciones con 512 y 1024
+
+#### OpenMP
 
 N | 2 THREADS | 4 THREADS | Secuencial
 --- | --- | --- | ---
@@ -24,3 +26,32 @@ N | 2 THREADS | 4 THREADS |
 512 | 0,947558807 | 0,854966084
 1024 | 0,930425045 | 0,849961346
 2048 | 0,945371418 | 0,850319418
+
+
+#### PThread
+
+N | 2 THREADS | 4 THREADS | Secuencial
+--- | --- | --- | ---
+. | segundos | segundos |
+512 | x | x | 1.920353
+1024 | x | x | 15.568164
+2048 | x | x | 126,132920
+
+**Speed Up**
+
+N | 2 THREADS | 4 THREADS |
+--- | --- | ---
+512 | x | x
+1024 | x | x
+2048 | x | x
+
+**Eficiencia**  
+
+N | 2 THREADS | 4 THREADS |
+--- | --- | ---
+512 | x | x
+1024 | x | x
+2048 | x | x
+
+
+### Ejercicio 2

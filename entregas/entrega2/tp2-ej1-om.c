@@ -118,9 +118,7 @@ double promedioMatriz(double *M, int n){
 	for (i = 0; i < n*n; i++){
 		total += M[i];
 	}
-
   total = total / (n*n);
-
 	return total;
 }
 
