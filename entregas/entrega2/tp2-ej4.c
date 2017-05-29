@@ -16,22 +16,22 @@ int main(int argc, char const *argv[]) {
 
   if (argc < 3) {
     printf("./tp2-ej4.c tamañoDelVector numero [4]\n");
-    printf("Debes ingresar el tamaño del vecto y numero a encontrar (0 <= x <= 100)\n");
+    printf("Debes ingresar el tamaño del vector (2 ^ N) y numero a encontrar (0 <= x <= 100)\n");
     printf("Parametro opcional 2 o 4 threads\n");
-    printf("Como compilar: gcc -fopenmp -o tp2-ej4 tp2-ej4.c -lm\n");
+    printf("Como compilar: gcc -fopenmp -o tp2-ej4 tp2-ej4.c -lm -std=c99\n");
     return 1;
   }
 
-  if (argc > 3 && atoi(argv[3]) == 4) {
-    count_threads = 4;
+  if (argc > 3) {
+    count_threads = atoi(argv[3]);
   }
   omp_set_num_threads(count_threads);
 
   if (argc == 5) {
     iter = atoi(argv[4]);
   }
-
-  N = atol(argv[1]) * atol(argv[1]);
+  long long power = atol(argv[1]);
+  N = pow(2, power);
   find = atoi(argv[2]);
   int tot;
   vector = (long*)malloc(sizeof(long) * N);
@@ -47,19 +47,20 @@ int main(int argc, char const *argv[]) {
     tot = 0;
     timetick = dwalltime();
 
-    #pragma omp parallel for reduction(+: tot)
+   #pragma omp parallel for reduction(+: tot)
     for(int i = 0; i < N; i++){
       if (vector[i] == find) {
         tot++;
       }
     }
-
-    promedio += dwalltime() - timetick;
-
+    long double tiempo = dwalltime() - timetick;
+    printf("%d tardó %LF\n", a, tiempo);
+    promedio += tiempo;
   }
   promedio = promedio / iter;
   printf("%d elementos encontrados.\n", tot);
-  printf("Tiempo promedio para %LF iteracion/es: %d  \n",promedio, iter);
+  printf("Tiempo promedio para %d iteracion/es: %LF  \n",iter, promedio);
+  free(vector);
 
   return 0;
 }

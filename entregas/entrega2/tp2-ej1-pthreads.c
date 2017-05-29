@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <time.h>
+// #include <time.h>
 #include <pthread.h>
 
 /* Time in seconds from some point in the past */
@@ -40,15 +40,15 @@ int main( int argc, char* argv[] ) {
 	if (argc < 2) {
 		printf("\n Falta un argumento: N dimension de la matriz \n");
 		printf("\n 2do argumento opcional: cantidad de hilos \n");
-		printf("\n Compilar:\ngcc -pthread -o tp2-ej1-pthreads tp2-ej1-pthreads.c -lm\n");
+		printf("\n Compilar:\ngcc -pthread -o tp2-ej1-pthreads tp2-ej1-pthreads.c -lm -std=c99\n");
 
 		return 0;
 	}
 
   N = atoi(argv[1]);
 
-	if (argc >= 3 && atoi(argv[2]) == 4) {
-		count_threads = 4;
+	if (argc >= 3) {
+		count_threads = atoi(argv[2]);
 	}
 
 	if (argc == 4) {
@@ -96,10 +96,12 @@ int main( int argc, char* argv[] ) {
 	  producto(ABC, AB, C, N);
 	  producto(DE, D, E, N);
 	  producto(DEF, DE, F, N);
-		
+
 		suma(ABC, DEF, N);
 
-		promedio += (dwalltime() - timetick);
+    long double tiempo = dwalltime() - timetick;
+    printf("%d tardó %LF\n", a, tiempo);
+    promedio += tiempo;
 	}
 	promedio = promedio / iter;
 	printf("Tiempo promedio para %d iteracion/es: %LF \n", iter, promedio);

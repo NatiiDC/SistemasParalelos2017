@@ -1,20 +1,22 @@
 #include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 /* Time in seconds from some point in the past */
 long double dwalltime();
-void imprimirInferior(int* A, int N);
-void imprimirSuperior(int* A, int N);
+void imprimirInferior(long long* A, long long N);
+void imprimirSuperior(long long* A, long long N);
 
-int main (int argc,char* argv[]){
-	int E, N, iter = 1;
-	int *A,*T;
+long long main (long long argc,char* argv[]){
+	long double avg = 0;
+	long long E, N, iter = 1;
+	long long *A,*T;
 
   if (argc < 2) {
-    printf("\n Falta un argumento: N dimension de la matriz");
+    printf("\n Falta un argumento: 2 ^ N");
     printf("\n Opcional: cantidad de iteraciones");
-    printf("\n Compilar:\ngcc -pthread -o tp2-ej3-sec tp2-ej3-sec.c -lm\n");
+    printf("\n Compilar:\ngcc -o tp2-ej3-sec tp2-ej3-sec.c -lm -std=c99\n");
 
     return 0;
   }
@@ -22,59 +24,63 @@ int main (int argc,char* argv[]){
 	if (argc == 3) {
 		iter = atoi(argv[2]);
 	}
+	long long power = atoi(argv[1]);
+  N = pow(2, power);
+	for (size_t i = 0; i < iter; i++) {
+		E = N*(N+1)/2;
+		A =(long long*)malloc(sizeof(long long)*E);
+		T =(long long*)malloc(sizeof(long long)*E);
 
-  N = atoi(argv[1]);
-
-	E = N*(N+1)/2;
-	A =(int*)malloc(sizeof(int)*E);
-	T =(int*)malloc(sizeof(int)*E);
-
-	for (int i = 0; i < E; ++i) {
-		A[i] = i+1;
-		T[i] = 0;
-	}
-  if (argc == 4) {
-		if (atoi(argv[3]) == 1) {
-		    printf("Matriz Inicial\n");
-			imprimirInferior(A,N);
+		for (long long i = 0; i < E; ++i) {
+			A[i] = i+1;
+			T[i] = 0;
 		}
-	}
-
-  double timetick = dwalltime();
-  int row = 0, column = 0, pos;
-	for (int i = 0; i < E; ++i) {
-    if (column > row) {
-      column = 0;
-      row++;
-    }
-    pos = (N * column) + row - ((column * (column+1)) / 2);
-    T[pos] = A[i];
-    column++;
-	}
-
-
-	double tiempo = dwalltime() - timetick;
-	printf("Tiempo en segundos %f \n", tiempo );
-
-	if (argc == 4) {
-		if (atoi(argv[3]) == 1) {
-		    printf("Matriz Resultante\n");
-			imprimirSuperior(T,N);
+	  if (argc == 4) {
+			if (atoi(argv[3]) == 1) {
+			    printf("Matriz Inicial\n");
+				imprimirInferior(A,N);
+			}
 		}
+
+	  double timetick = dwalltime();
+	  long long row = 0, column = 0, pos;
+		for (long long i = 0; i < E; ++i) {
+	    if (column > row) {
+	      column = 0;
+	      row++;
+	    }
+	    pos = (N * column) + row - ((column * (column+1)) / 2);
+	    T[pos] = A[i];
+	    column++;
+		}
+
+		long double tiempo = dwalltime() - timetick;
+		printf("Tiempo en segundos %LF \n", tiempo );
+		avg += tiempo;
+
+		if (argc == 4) {
+			if (atoi(argv[3]) == 1) {
+			    printf("Matriz Resultante\n");
+				imprimirSuperior(T,N);
+			}
+		}
+		free(A);
+		free(T);
 	}
+	printf("Tiempo promedio: %LF.\n", avg/ iter);
 }
 
 
 /****************************** PRINT ***********************************/
 
-void imprimirInferior(int* A, int N) {
-	int actual = 0;
-	for(int i=0;i<N;i++){
-		for(int j=0;j<i+1;j++){
-			printf("%d ", (int) A[actual]);
+void imprimirInferior(long long* A, long long N) {
+	long long actual = 0;
+	for(long long i=0;i<N;i++){
+		for(long long j=0;j<i+1;j++){
+			printf("%d ", (long long) A[actual]);
 			actual++;
 		}
-		for(int j=i+1;j<N;j++){
+		for(long long j=i+1;j<N;j++){
 			printf("0 ");
 		}
 		printf("\n");
@@ -82,14 +88,14 @@ void imprimirInferior(int* A, int N) {
 	printf("\n");
 }
 
-void imprimirSuperior(int* A, int N) {
-	int actual = 0;
-	for(int i=0;i<N;i++){
-		for(int j=0;j<i;j++){
+void imprimirSuperior(long long* A, long long N) {
+	long long actual = 0;
+	for(long long i=0;i<N;i++){
+		for(long long j=0;j<i;j++){
 			printf("0 ");
 		}
-		for(int j=i;j<N;j++){
-			printf("%d ", (int) A[actual]);
+		for(long long j=i;j<N;j++){
+			printf("%d ", (long long) A[actual]);
 			actual++;
 		}
 		printf("\n");
