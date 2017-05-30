@@ -5,7 +5,6 @@
 #include <sys/time.h>
 
 /* Globals definition*/
-pthread_mutex_t minimum_value_lock;
 long i, N, paralelism;
 long double timetick;
 long *vector;
@@ -26,23 +25,25 @@ typedef struct {
 	pthread_cond_t ok_to_proceed;
 	int count;
 } mylib_barrier_t;
+mylib_barrier_t *barriers;
 
-void mylib_init_barrier (mylib_barrier_t *b) {
-	b -> count = 0;
-	pthread_mutex_init(&(b -> count_lock), NULL);
-	pthread_cond_init(&(b -> ok_to_proceed), NULL);
+
+void mylib_init_barrier (mylib_barrier_t* b) {
+	b->count = 0;
+	pthread_mutex_init(&(b->count_lock), NULL);
+	pthread_cond_init(&(b->ok_to_proceed), NULL);
 }
 
 void mylib_barrier (mylib_barrier_t *b, int num_threads) {
-	pthread_mutex_lock(&(b -> count_lock));
-	b -> count ++;
-	if (b -> count == num_threads) {
-		b -> count = 0;
-		pthread_cond_broadcast(&(b -> ok_to_proceed));
+	pthread_mutex_lock(&(b->count_lock));
+	b->count++;
+	if (b->count == num_threads) {
+		b->count = 0;
+		pthread_cond_broadcast(&(b->ok_to_proceed));
 	} else {
-		pthread_cond_wait(&(b -> ok_to_proceed),&(b -> count_lock));
+		pthread_cond_wait(&(b->ok_to_proceed),&(b->count_lock));
 	}
-	pthread_mutex_unlock(&(b -> count_lock));
+	pthread_mutex_unlock(&(b->count_lock));
 }
 
 // ----------------------------------------
@@ -132,19 +133,27 @@ void *ordenarInicial(void* args) {
 
 	int cant = log2(paralelism);
 	if ((p_id%2) == 0) {
-		printf("p_id: %d\n",p_id);
+
 		for (int i = 1; i <= cant; i++) {
 			if (p_id%(2*i) == 0) {
-				// printf("p_id: %d\twait thread: %d\n",p_id, (int)(p_id+(pow(2, i-1))));
-				pthread_join(( p_threads[(int)(p_id+(pow(2, i-1)))].thread ), NULL);
 
-				p_threads[p_id].fin = p_threads[ (int)(p_id+(pow(2, i-1))) ].fin;
-				printf("p_id: %d\twait thread: %d\tfin: %ld\n",p_id, (int)(p_id+(pow(2, i-1))), p_threads[p_id].fin);
+				int nextMergeId = (int)(p_id+(pow(2, i-1)));
+				printf("p_id: %d\twait thread: %d\n",p_id,nextMergeId);
+				// pthread_join(( p_threads[(int)(p_id+(pow(2, i-1)))].thread ), NULL);
+				mylib_barrier(&barriers[nextMergeId], 2);
+
+				p_threads[p_id].fin = p_threads[nextMergeId].fin;
+				printf("p_id: %d -\tthread %d: finish\tfin: %ld\n",p_id, nextMergeId, p_threads[p_id].fin);
 				merge(p_threads[p_id].init, p_threads[p_id].fin);
+			} else {
+				printf("p_id: %d\tIm wait\n",p_id);
+				mylib_barrier(&barriers[p_id], 2);
 			}
 		}
+	} else {
+		printf("p_id: %d\tIm wait\n",p_id);
+		mylib_barrier(&barriers[p_id], 2);
 	}
-
 }
 
 int main(long argc, char*argv[]) {
@@ -165,6 +174,8 @@ int main(long argc, char*argv[]) {
   N = pow(2, power);
 	paralelism = atoi(argv[2]);
 	p_threads = malloc(sizeof(struct My_threads) * paralelism);
+	barriers = malloc(sizeof(mylib_barrier_t) * (paralelism));
+
 	pthread_attr_t attr;
 	pthread_attr_init (&attr);
 
@@ -185,6 +196,8 @@ int main(long argc, char*argv[]) {
 
 	long cantThreads = paralelism;
   for(i = 0; i < paralelism; i++){
+		mylib_init_barrier(&barriers[i]);
+
 		p_threads[i].id = i;
 		p_threads[i].init = N/paralelism * i;
 		p_threads[i].fin = (N/paralelism * (i+1))-1;
@@ -192,16 +205,15 @@ int main(long argc, char*argv[]) {
 	for(i=0; i < paralelism; i++) {
 		pthread_create(&p_threads[i].thread, NULL, ordenarInicial, &p_threads[i].id);
 	}
-
+	
 	pthread_join(p_threads[0].thread, NULL);
-
-	if (debug) {
-		printVector(vector);
-		printf("Primer OrdenarInicial\n" );
-	}
-
 	long double tiempo = dwalltime() - timetick;
+
+	for(i=1; i < paralelism; i++) {
+		pthread_join(p_threads[i].thread, NULL);
+	}
 	printf("Tiempo en segundos %LF \n", tiempo);
+
 
 	if (debug) {
 		printVector(vector);
