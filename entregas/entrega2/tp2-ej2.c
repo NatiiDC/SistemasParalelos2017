@@ -9,13 +9,43 @@ pthread_mutex_t minimum_value_lock;
 long i, N, paralelism;
 long double timetick;
 long *vector;
-long debug = 0;
+long debug = 0, power;
 
 struct My_threads {
 	long init;
 	long fin;
-	long id;
+	pthread_t thread;
+	int id;
 };
+struct My_threads *p_threads;
+
+// ---------------------------------------------
+
+typedef struct {
+	pthread_mutex_t count_lock;
+	pthread_cond_t ok_to_proceed;
+	int count;
+} mylib_barrier_t;
+
+void mylib_init_barrier (mylib_barrier_t *b) {
+	b -> count = 0;
+	pthread_mutex_init(&(b -> count_lock), NULL);
+	pthread_cond_init(&(b -> ok_to_proceed), NULL);
+}
+
+void mylib_barrier (mylib_barrier_t *b, int num_threads) {
+	pthread_mutex_lock(&(b -> count_lock));
+	b -> count ++;
+	if (b -> count == num_threads) {
+		b -> count = 0;
+		pthread_cond_broadcast(&(b -> ok_to_proceed));
+	} else {
+		pthread_cond_wait(&(b -> ok_to_proceed),&(b -> count_lock));
+	}
+	pthread_mutex_unlock(&(b -> count_lock));
+}
+
+// ----------------------------------------
 
 /* Functions definition*/
 long double dwalltime() {
@@ -44,7 +74,6 @@ void qs(long *vector,long limite_izq,long limite_der)
 		if (der == izq) {
 			return;
 		}
-
     pivote = vector[(izq+der)/2];
 
     do {
@@ -68,87 +97,54 @@ void quickSort(long *vector, long inicio, long fin) {
 		qs(vector, inicio, fin);
 }
 
-
-void mergeIntern(long init, long fin) {
-	long *vectorB;
+void merge(long init, long fin) {
 	long N = (fin - init + 1);
-	vectorB = (long*)malloc(sizeof(long)*(N));
+	long *vectorTemp = (long*)malloc(sizeof(long)*(N));
 	long actLeft = init;
 	long actRight = init + ( N / 2);
 	for(long i=0;i<N;i++){
 		if (actLeft == init + ( N / 2)) {
-			vectorB[i] = vector[actRight];
+			vectorTemp[i] = vector[actRight];
 			actRight++;
 		}
 		else {
 			if (actRight == fin+1) {
-				vectorB[i] = vector[actLeft];
+				vectorTemp[i] = vector[actLeft];
 				actLeft++;
 			} else {
 				if (vector[actLeft] < vector[actRight]) {
-					vectorB[i] = vector[actLeft];
+					vectorTemp[i] = vector[actLeft];
 					actLeft++;
 				} else {
-					vectorB[i] = vector[actRight];
+					vectorTemp[i] = vector[actRight];
 					actRight++;
 				}
-
 			}
 		}
 	}
-	for(long i=0;i<N;i++) vector[init+i] = vectorB[i];
-	free (vectorB);
+	for(long i=0;i<N;i++) vector[init+i] = vectorTemp[i];
+	free (vectorTemp);
 }
 
-void mergeSort(long init, long fin) {
-	if ((fin - init) > 0) {
-		long N = fin - init + 1;
-	 	long initLeft = init;
-		long finLeft = init + (long) N/2 - 1;
-		long initRight = finLeft + 1;
-		long finRight = fin;
-		mergeSort(initLeft, finLeft);
-		mergeSort(initRight, finRight);
-		mergeIntern(init, fin);
-	}
-}
+void *ordenarInicial(void* args) {
+	int p_id = *((int *)args);
+	quickSort(vector, p_threads[p_id].init, p_threads[p_id].fin);
 
-void *merge(void* arguments) {
-	struct My_threads *p_thread = arguments;
-	long init = p_thread->init;
-	long fin = p_thread->fin;
-	long N = (fin - init + 1);
-	long *vectorB = (long*)malloc(sizeof(long)*(N));
-	long actLeft = init;
-	long actRight = init + ( N / 2);
-	for(long i=0;i<N;i++){
-		if (actLeft == init + ( N / 2)) {
-			vectorB[i] = vector[actRight];
-			actRight++;
-		}
-		else {
-			if (actRight == fin+1) {
-				vectorB[i] = vector[actLeft];
-				actLeft++;
-			} else {
-				if (vector[actLeft] < vector[actRight]) {
-					vectorB[i] = vector[actLeft];
-					actLeft++;
-				} else {
-					vectorB[i] = vector[actRight];
-					actRight++;
-				}
+	int cant = log2(paralelism);
+	if ((p_id%2) == 0) {
+		printf("p_id: %d\n",p_id);
+		for (int i = 1; i <= cant; i++) {
+			if (p_id%(2*i) == 0) {
+				// printf("p_id: %d\twait thread: %d\n",p_id, (int)(p_id+(pow(2, i-1))));
+				pthread_join(( p_threads[(int)(p_id+(pow(2, i-1)))].thread ), NULL);
 
+				p_threads[p_id].fin = p_threads[ (int)(p_id+(pow(2, i-1))) ].fin;
+				printf("p_id: %d\twait thread: %d\tfin: %ld\n",p_id, (int)(p_id+(pow(2, i-1))), p_threads[p_id].fin);
+				merge(p_threads[p_id].init, p_threads[p_id].fin);
 			}
 		}
 	}
-	for(long i=0;i<N;i++) vector[init+i] = vectorB[i];
-	free (vectorB);
-}
 
-void *ordenarInicial(void* arguments) {
-	struct My_threads *p_thread = arguments;
-	quickSort(vector, p_thread->init, p_thread->fin);
 }
 
 int main(long argc, char*argv[]) {
@@ -165,13 +161,12 @@ int main(long argc, char*argv[]) {
 	}
 
 	/* Globals initialization.*/
-	long power = atoi(argv[1]);
+	power = atoi(argv[1]);
   N = pow(2, power);
 	paralelism = atoi(argv[2]);
-	pthread_t p_threads[paralelism];
+	p_threads = malloc(sizeof(struct My_threads) * paralelism);
 	pthread_attr_t attr;
 	pthread_attr_init (&attr);
-	struct My_threads *p_thread = malloc(sizeof(struct My_threads)*paralelism);
 
 	printf("CANTIDAD DE THREADS: %ld.\n", paralelism);
 	printf("N: %ld.\n", N);
@@ -190,35 +185,19 @@ int main(long argc, char*argv[]) {
 
 	long cantThreads = paralelism;
   for(i = 0; i < paralelism; i++){
-		p_thread[i].id = i;
-		p_thread[i].init = N/paralelism * i;
-		p_thread[i].fin = (N/paralelism * (i+1))-1;
+		p_threads[i].id = i;
+		p_threads[i].init = N/paralelism * i;
+		p_threads[i].fin = (N/paralelism * (i+1))-1;
 	}
 	for(i=0; i < paralelism; i++) {
-		pthread_create( &p_threads[i], NULL, ordenarInicial, (void *)&p_thread[i]
-		);
+		pthread_create(&p_threads[i].thread, NULL, ordenarInicial, &p_threads[i].id);
 	}
-	for (i=0; i < paralelism; i++){
-		pthread_join(p_threads[i], NULL);
-	}
+
+	pthread_join(p_threads[0].thread, NULL);
 
 	if (debug) {
 		printVector(vector);
 		printf("Primer OrdenarInicial\n" );
-	}
-
-	for(long cont = 0; cont < (long)log2(paralelism); cont++) {
-		cantThreads = cantThreads/2;
-		for(i = 0; i < cantThreads; i++){
-			p_thread[i].init = N/cantThreads * i;
-			p_thread[i].fin = (N/cantThreads * (i+1))-1;
-		}
-		for(i=0; i<cantThreads; i++) {
-			pthread_create(&p_threads[i], NULL, merge, (void *)&p_thread[i]);
-		}
-		for (i=0; i< cantThreads; i++){
-			pthread_join(p_threads[i], NULL);
-		}
 	}
 
 	long double tiempo = dwalltime() - timetick;
