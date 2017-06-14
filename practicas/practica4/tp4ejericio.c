@@ -49,22 +49,37 @@ int main(int argc, char *argv[]) {
 	MPI_Comm_size (MPI_COMM_WORLD, &paralelism);
 	MPI_Comm_rank(MPI_COMM_WORLD, &identifier);
 
-	if (identifier == 0) {
-		long* matrix1 = initMatrix();
-		long* matrix2 = initMatrix();
-		for (int i = 1; i < paralelism; ++i) {
-			MPI_Ssend(matrix1, size, MPI_LONG, i, tag, MPI_COMM_WORLD);
-			MPI_Ssend(matrix2, size, MPI_LONG, i, tag, MPI_COMM_WORLD);
-		}
+	long *matrix1;
+	long *matrix2;
+	long *result;
+	long *sub_rand_nums;
 
-	} else {
-		long* matrix1 = malloc(sizeof(long)*size);
-		long* matrix2 = malloc(sizeof(long)*size);
-		MPI_Recv(matrix1, size, MPI_LONG, 0, tag, MPI_COMM_WORLD, status);
-		MPI_Recv(matrix2, size, MPI_LONG, 0, tag, MPI_COMM_WORLD, status);
-		printMatrix(matrix1);
-		printMatrix(matrix2);
+	if (identifier == 0) {
+		matrix1 = initMatrix();
+		matrix2 = initMatrix();
+		result = calloc(size, sizeof(long));
+		
+	} 
+		// long* matrixOne = malloc(sizeof(long) * size/paralelism);
+		// long* matrixTwo = malloc(sizeof(long) * size);
+		sub_rand_nums = malloc(sizeof(long) * size/paralelism);
+
+		MPI_Bcast(matrix2, size, MPI_LONG, 0, MPI_COMM_WORLD);
+		MPI_Scatter(matrix1, size, MPI_LONG, matrix1, size/paralelism, MPI_LONG, 0, MPI_COMM_WORLD);
+
 		printf("Soy el id: %d\n", identifier);
+
+		MPI_Gather(result, size/paralelism, MPI_LONG, result, MPI_LONG, 0, MPI_COMM_WORLD);
+
+		// MPI_Recv(matrix1, size, MPI_LONG, 0, tag, MPI_COMM_WORLD, status);
+		// MPI_Recv(matrix2, size, MPI_LONG, 0, tag, MPI_COMM_WORLD, status);
+		// printMatrix(matrix1);
+		// printMatrix(matrix2);
+	
+	if (identifier == 0) {
+		free(matrix1);
+		free(matrix2);
+		free(result);
 	}
 
 
