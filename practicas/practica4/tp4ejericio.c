@@ -31,7 +31,7 @@ void printMatrix(long* matrix) {
 
 int main(int argc, char *argv[]) {
 
-	const char* help ="\nCompilar en Linux Openmpi:\n\tmpicc –o salidaEjecutable archivoFuente\nEjecutar en Openmpi:\n\tEn una sola maquina:\n\t\tmpirun –np <P> archivoFuente <E>\n\t\t<P> = cantidad de procesos\n\t\t<E> = 2^E elementos del vector\n\tEn un cluster de máquinas:\n\t\tmpirun –np cantidadDeProcesos –machinefile archivoMaquinas archivoFuente";
+	const char* help ="\nCompilar en Linux Openmpi:\n\tmpicc -o tp4ejericio1 tp4ejericio.c -lm\nEjecutar en Openmpi:\n\tEn una sola maquina:\n\t\tmpirun -np <P> archivoFuente <E>\n\t\t<P> = cantidad de procesos\n\t\t<E> = 2^E elementos del vector\n\tEn un cluster de máquinas:\n\t\tmpirun -np cantidadDeProcesos -machinefile archivoMaquinas archivoFuente";
 	
 	if (argc < 2) {
 		printf("%s\n", help);
@@ -50,15 +50,20 @@ int main(int argc, char *argv[]) {
 	MPI_Comm_rank(MPI_COMM_WORLD, &identifier);
 
 	if (identifier == 0) {
-		long* matrix = initMatrix();
+		long* matrix1 = initMatrix();
+		long* matrix2 = initMatrix();
 		for (int i = 1; i < paralelism; ++i) {
-			MPI_Ssend(matrix, size, MPI_LONG, i, tag, MPI_COMM_WORLD);
+			MPI_Ssend(matrix1, size, MPI_LONG, i, tag, MPI_COMM_WORLD);
+			MPI_Ssend(matrix2, size, MPI_LONG, i, tag, MPI_COMM_WORLD);
 		}
 
 	} else {
-		long* matrix;
-		MPI_Recv(matrix, size, MPI_LONG, 0, tag, MPI_COMM_WORLD, status);
-		printMatrix(matrix);
+		long* matrix1 = malloc(sizeof(long)*size);
+		long* matrix2 = malloc(sizeof(long)*size);
+		MPI_Recv(matrix1, size, MPI_LONG, 0, tag, MPI_COMM_WORLD, status);
+		MPI_Recv(matrix2, size, MPI_LONG, 0, tag, MPI_COMM_WORLD, status);
+		printMatrix(matrix1);
+		printMatrix(matrix2);
 		printf("Soy el id: %d\n", identifier);
 	}
 
