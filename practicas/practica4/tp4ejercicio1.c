@@ -25,6 +25,18 @@ void printMatrix(long* matrix) {
 	}
 }
 
+void producto(long* matrixA, long* matrixB, long* result) {
+	long aux;
+	for (long i = 0; i < edge/paralelism; i++) {
+		for (long j = 0; j < edge; j++) {
+			aux = 0;
+			for (long k = 0; k < edge; k++) {
+				aux = aux + matrixA[i*edge + k] * matrixB[k + j*edge];
+			}
+			result[i*edge+j] = aux;
+		}
+	}
+}
 
 int main(int argc, char *argv[]) {
 
@@ -62,16 +74,7 @@ int main(int argc, char *argv[]) {
 		MPI_Bcast(matrix2, size, MPI_LONG, 0, MPI_COMM_WORLD);
 		MPI_Scatter(matrix1, (int)size/paralelism, MPI_LONG, matrix1, (int)size/paralelism, MPI_LONG, 0, MPI_COMM_WORLD);
 
-		long aux;
-		for (long i = 0; i < edge/paralelism; i++) {
-			for (long j = 0; j < edge; j++) {
-				aux = 0;
-				for (long k = 0; k < edge; k++) {
-					aux = aux + matrix1[i*edge + k] * matrix2[k + j*edge];
-				}
-				sub_rand_nums[i*edge+j] = aux;
-			}
-		}
+		producto(matrix1, matrix2, sub_rand_nums);
 
 		MPI_Gather(sub_rand_nums, (int)size/paralelism, MPI_LONG, result, (int)size/paralelism, MPI_LONG, 0, MPI_COMM_WORLD);
 
