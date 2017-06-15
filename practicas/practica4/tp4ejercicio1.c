@@ -32,7 +32,7 @@ void printMatrix(long* matrix) {
 int main(int argc, char *argv[]) {
 
 	const char* help ="\nCompilar en Linux Openmpi:\n\tmpicc -o tp4ejericio1 tp4ejericio.c -lm\nEjecutar en Openmpi:\n\tEn una sola maquina:\n\t\tmpirun -np <P> archivoFuente <E>\n\t\t<P> = cantidad de procesos\n\t\t<E> = 2^E elementos del vector\n\tEn un cluster de máquinas:\n\t\tmpirun -np cantidadDeProcesos -machinefile archivoMaquinas archivoFuente";
-	
+
 	if (argc < 2) {
 		printf("%s\n", help);
 		return 0;
@@ -58,8 +58,8 @@ int main(int argc, char *argv[]) {
 		matrix1 = initMatrix();
 		matrix2 = initMatrix();
 		result = calloc(size, sizeof(long));
-		
-	} 
+
+	}
 		// long* matrixOne = malloc(sizeof(long) * size/paralelism);
 		// long* matrixTwo = malloc(sizeof(long) * size);
 		sub_rand_nums = malloc(sizeof(long) * size/paralelism);
@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
 		// MPI_Recv(matrix2, size, MPI_LONG, 0, tag, MPI_COMM_WORLD, status);
 		// printMatrix(matrix1);
 		// printMatrix(matrix2);
-	
+
 	if (identifier == 0) {
 		free(matrix1);
 		free(matrix2);
