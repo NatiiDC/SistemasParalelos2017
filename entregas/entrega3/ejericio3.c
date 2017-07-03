@@ -68,9 +68,62 @@ int* createArray() {
   }
   MPI_Scatter(array, scatteredSize, MPI_INT,
               array, scatteredSize, MPI_INT,
-              ROOT,WORLD);
+              ROOT, WORLD);
   return array;
 }
+
+int* merge(int* arr) {
+	int* vectorTemp = newArray(size);
+	long actLeft = 0;
+	long actRight = size / 2;
+	for(long i=0; i<size; i++){
+		if (actLeft == ( size / 2)) {
+			vectorTemp[i] = arr[actRight];
+			actRight++;
+		}
+		else {
+			if (actRight == size) {
+				vectorTemp[i] = arr[actLeft];
+				actLeft++;
+			} else {
+				if (arr[actLeft] < arr[actRight]) {
+					vectorTemp[i] = arr[actLeft];
+					actLeft++;
+				} else {
+					vectorTemp[i] = arr[actRight];
+					actRight++;
+				}
+			}
+		}
+	}
+	return vectorTemp;
+}
+
+int comparison_function(const void *e1, const void *e2) {
+    int a = *((int*) e1);
+    int b = *((int*) e2);
+    if (a < b) {
+        return -1;
+    } else if (a > b) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+int* sort(int* arr){
+    qsort(arr, scatteredSize, sizeof(int), comparison_function);
+    MPI_Gather( arr, scatteredSize, MPI_INT,
+                arr, scatteredSize, MPI_INT,
+                ROOT, WORLD);
+    if (isRoot()) {
+      printArray(arr);
+      int* result = merge(arr);
+      printArray(result);
+    }
+}
+
+
 
 double stopwatch() {
 	double sec;
@@ -109,10 +162,12 @@ int main(int argc, char *argv[]) {
 
   int* arr = createArray();
 
-  if (shouldPrint()) {
-		printf("result: \n");
-		printArray(arr);
-	}
+  // if (shouldPrint()) {
+	// 	printf("result: \n");
+	// 	printArray(arr);
+	// }
+
+  int* arrSort = sort(arr);
 
   MPI_Finalize();
   return 0;
