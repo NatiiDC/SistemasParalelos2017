@@ -156,6 +156,7 @@ int* sort(int* arr) {
 				communications += end - start;
 				result = merge(arr, recive, block);
 				block *= 2;
+				recive = newArray(block);
 				arr = result;
 			}
 		}

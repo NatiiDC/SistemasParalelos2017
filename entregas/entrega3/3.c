@@ -23,6 +23,7 @@ const char* help ="\nCompilar en Linux Openmpi:\n\tmpicc -o 1 1.c -lm\nEjecutar 
 
 // Data globals.
 long long exponent, size, scatteredSize;
+double communications = 0;
 struct Map {
   int num;
   long occu;
@@ -38,6 +39,15 @@ int isRoot() {
 // Debug functions.
 int shouldPrint() {
 	return debug && isRoot();
+}
+
+// --------
+double stopwatch() {
+	double sec;
+	struct timeval tv;
+	gettimeofday(&tv,NULL);
+	sec = tv.tv_sec + tv.tv_usec/1000000.0;
+	return sec;
 }
 
 void printArray(int* arr, long long size){
@@ -80,9 +90,12 @@ int* createArray() {
   } else {
     array = newArray(scatteredSize);
   }
+	double start = stopwatch();
   MPI_Scatter(array, scatteredSize, MPI_INT,
               array, scatteredSize, MPI_INT,
               ROOT, WORLD);
+	double end = stopwatch();
+	communications += end - start;
   return array;
 }
 
@@ -141,19 +154,25 @@ int comparison_int(const void *e1, const void *e2) {
 
 int* sort(int* arr) {
     qsort(arr, scatteredSize, sizeof(int), comparison_int);
-    int* recive;
     int* result = arr;
     int block = scatteredSize;
+		int* recive = newArray(block);
     for(int i = 1; i <= log2(paralelism); i++) {
       if (is_sender(i)) {
         // printf("Soy: %d - Mando a: %d\n",id, receiver(i) );
+				double start = stopwatch();
           MPI_Send(arr, block, MPI_INT, receiver(i), 0, MPI_COMM_WORLD);
+					double end = stopwatch();
+					communications += end - start;
       } else if (is_receiver(i)) {
         // printf("Soy: %d - Recibo de: %d\n",id, sender(i) );
+				double start = stopwatch();
           MPI_Recv(recive, block, MPI_INT, sender(i), 0, MPI_COMM_WORLD, &status);
-
+					double end = stopwatch();
+					communications += end - start;
           result = merge(arr, recive, block);
           block *= 2;
+					recive = newArray(block);
           arr = result;
       }
     }
@@ -191,6 +210,7 @@ struct Map* pairsOfOccurrences(int *arrSort) {
   map[iteraciones].num = num;
   map[iteraciones].occu = occurrences;
 
+	double start = stopwatch();
   if (isRoot()){
     // printf("Soy root(%d) y le envío a: %d | num: %d occ: %ld\n",id, id+1, num, occurrences);
     MPI_Send(&num, 1, MPI_INT, id+1, 0, WORLD);
@@ -221,6 +241,8 @@ struct Map* pairsOfOccurrences(int *arrSort) {
   }
   map[iteraciones].occu = occurrences;
 
+	double end = stopwatch();
+	communications += end - start;
   return map;
 }
 // --------
@@ -261,12 +283,18 @@ struct Map* sortPairs(struct Map *pairs){
 
   for(int i = 1; i <= log2(paralelism); i++) {
     if (is_sender(i)) {
+			double start = stopwatch();
       MPI_Send(&block, 1, MPI_LONG, receiver(i), 0, WORLD);
       MPI_Send(pairs, block*(sizeof(struct Map)), MPI_CHAR, receiver(i), 0, WORLD);
+			double end = stopwatch();
+			communications += end - start;
     } else if (is_receiver(i)) {
+			double start = stopwatch();
       MPI_Recv(&reciveIt, 1, MPI_LONG, sender(i), 0, WORLD, &status);
       mapRecive = malloc(reciveIt*(sizeof(struct Map)));
       MPI_Recv(mapRecive, reciveIt*(sizeof(struct Map)), MPI_CHAR, sender(i), 0, WORLD, &status);
+			double end = stopwatch();
+			communications += end - start;
       result = mergeMap(pairs, mapRecive, block, reciveIt);
       block += reciveIt;
       pairs = result;
@@ -282,14 +310,7 @@ struct Map* sortPairs(struct Map *pairs){
   return pairs;
 }
 
-// --------
-double stopwatch() {
-	double sec;
-	struct timeval tv;
-	gettimeofday(&tv,NULL);
-	sec = tv.tv_sec + tv.tv_usec/1000000.0;
-	return sec;
-}
+
 
 int main(int argc, char *argv[]) {
 
@@ -331,10 +352,12 @@ int main(int argc, char *argv[]) {
   if (!isRoot()){
     arrSort = newArray(scatteredSize);
   }
+	double startcom = stopwatch();
   MPI_Scatter(arrSort, scatteredSize, MPI_INT,
               arrSort, scatteredSize, MPI_INT,
               ROOT, WORLD);
-
+	double endcom = stopwatch();
+	communications += endcom - startcom;
   struct Map *pairs = pairsOfOccurrences(arrSort);
   struct Map *pairsSort = sortPairs(pairs);
 
@@ -348,6 +371,8 @@ int main(int argc, char *argv[]) {
     double end = stopwatch();
     double delta = end - start;
     printf("total seconds: %f\n", delta);
+		printf("total communications: %f\n", communications);
+		printf("Overhead: %f %%\n", communications / delta);
   }
 
   if (shouldPrint()){
