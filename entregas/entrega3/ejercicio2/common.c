@@ -109,6 +109,11 @@ int* createArray() {
 	return newArray(scatteredSize);
 }
 
+int sortFunction(const void* a, const void* b) {
+	return ( *((int*)a) - *((int*)b) );
+}
+
+// Comunication Functions
 void sendSize(int receiver, long long size) {
 	MPI_Send(&size, 1, MPI_LONG_LONG_INT, receiver, T_SIZE, WORLD);
 }
@@ -131,6 +136,129 @@ int* receiveArray(int sender, long long size) {
 	return array;
 }
 
-int sortFunction(const void* a, const void* b) {
-	return ( *((int*)a) - *((int*)b) );
+int getLockFor(int task) {
+	MPI_Send(&task, 1, MPI_INT, MASTER, T_LOCK, WORLD);
+}
+
+void sendTask(int receiver, int task) {
+	MPI_Send(&task, 1, MPI_INT, receiver, T_TASK, WORLD);
+}
+
+int getTask() {
+	int result;
+	MPI_Status status;
+	getLockFor(NONE);
+	MPI_Recv(&result, 1, MPI_INT, MASTER, T_TASK, WORLD, &status);
+	return result;
+}
+
+void sendSort(int receiver, int* array) {
+	sendTask(receiver, SORT);
+	sendArray(receiver, array, scatteredSize);
+}
+
+void sendMerge(int receiver) {
+	sendTask(receiver, MERGE);
+}
+
+
+// Multimerge functions
+#include <limits.h>
+
+typedef struct {
+	int e;
+	int index;
+} tMin;
+
+typedef struct {
+	int* base;
+	int* it;
+	int* end;
+	long long size;
+} tArray;
+
+typedef struct {
+	long long maxArrays;
+	long long arrayCount;
+	long long size;
+	tArray* sortedArrays;
+	int* base;
+	int* it;
+} tMerged;
+
+tMerged mergedArray;
+
+void saveArray(int* array, long long size) {
+	if (mergedArray.arrayCount >= mergedArray.maxArrays) {
+		mergedArray.maxArrays *= 2;
+		mergedArray.sortedArrays = realloc(mergedArray.sortedArrays, mergedArray.maxArrays);
+	}
+	tArray* sortedArray = &(mergedArray.sortedArrays[mergedArray.arrayCount++]);
+	sortedArray->base = array;
+	sortedArray->it = array;
+	sortedArray->end = array + size;
+	sortedArray->size = size;
+}
+
+void freeTArray(tArray array) {
+	free(array.base);
+}
+
+void setupMergeArray() {
+	mergedArray.maxArrays = 32;
+	mergedArray.arrayCount = 0;
+	mergedArray.sortedArrays = malloc(sizeof(tArray*) * mergedArray.maxArrays);
+}
+
+void initMultiMerge() {
+	long long size = 0;
+	for (long long i = 0; i < mergedArray.arrayCount; i++) {
+		size += mergedArray.sortedArrays[i].size;
+	}
+	mergedArray.size = size;
+	mergedArray.base = malloc(sizeof(int) * mergedArray.size);
+	mergedArray.it = mergedArray.base;
+}
+
+void cleanupMergeArray() {
+	for (long long i = 0; i < mergedArray.arrayCount; i++) {
+		freeTArray(mergedArray.sortedArrays[i]);
+	}
+	free(mergedArray.sortedArrays);
+	free(mergedArray.base);
+}
+
+int endMultiMerge() {
+	for (long long i = 0; i < mergedArray.arrayCount; i++) {
+		tArray* array = &mergedArray.sortedArrays[i];
+		if(array->it != array->end) return 0;
+	}
+	return 1;
+}
+
+tMin findMin() {
+	tMin min = {INT_MAX, -1};
+	for (long long i = 0; i < mergedArray.arrayCount; i++) {
+		tArray* array = &mergedArray.sortedArrays[i];
+		if (array->it != array->end) {
+			if (*array->it <= min.e) {
+				min.e = *array->it;
+				min.index = i;
+			}
+		}
+	}
+	mergedArray.sortedArrays[min.index].it++;
+	return min;
+}
+
+void saveMin(tMin min) {
+	*mergedArray.it = min.e;
+	mergedArray.it++;
+}
+
+void merge() {
+	initMultiMerge();
+	do {
+		saveMin(findMin());
+	} while(!endMultiMerge());
 }

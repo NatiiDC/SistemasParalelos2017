@@ -10,24 +10,17 @@ tUnordered uArray;
 void setupMaster() {
 	uArray.base = initArray();
 	uArray.it = uArray.base - scatteredSize;
+	setupMergeArray();
+}
+
+void cleanupMaster() {
+	freeArray(uArray.base);
+	cleanupMergeArray();
 }
 
 int* nextArray() {
 	uArray.it += scatteredSize;
 	return (uArray.it < (uArray.base + size))? uArray.it : NULL;
-}
-
-void sendTask(int receiver, int task) {
-	MPI_Send(&task, 1, MPI_INT, receiver, T_TASK, WORLD);
-}
-
-void sendSort(int receiver, int* array) {
-	sendTask(receiver, SORT);
-	sendArray(receiver, array, scatteredSize);
-}
-
-void sendMerge(int receiver) {
-	sendTask(receiver, MERGE);
 }
 
 int processRequest(int task, int sender) {
@@ -48,8 +41,7 @@ int processRequest(int task, int sender) {
 		{
 			long long size = receiveSize(sender);
 			int* array = receiveArray(sender, size);
-			printf("Received array from %d\n", sender);
-			printSizedArray(array, size);
+			saveArray(array, size);
 			return 0;
 		}
 		// Abort.
@@ -71,9 +63,12 @@ int waitForWorker() {
 
 void master() {
 	setupMaster();
-	printf("MASTER started to run.\n");
+	//printf("MASTER started to run.\n");
 	int doneWorkers = 0;
 	do {
 		doneWorkers += waitForWorker();
 	} while(doneWorkers < (paralelism - 1));
+	//merge();
+	//printArray(mergedArray.base);
+	//cleanupMaster();
 }

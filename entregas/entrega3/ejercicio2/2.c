@@ -13,8 +13,8 @@ const char* help ="\nCompilar en Linux Openmpi:\n\tmpicc -o 1 1.c -lm\nEjecutar 
 long long exponent, jobs, size, scatteredSize;
 
 #include "common.c"
-void master();
-void worker();
+#include "master.c"
+#include "worker.c"
 
 void startProc() {
 	if (isMaster()) {
@@ -54,6 +54,3 @@ int main(int argc, char* argv[]) {
 	MPI_Finalize();
 	return 0;
 }
-
-#include "master.c"
-#include "worker.c"
