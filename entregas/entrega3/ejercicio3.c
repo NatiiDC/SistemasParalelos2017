@@ -102,9 +102,6 @@ int sender(int i) {
   return (int)(id+(pow(2, i-1)));
 }
 
-// --------
-
-
 int* merge(int* L, int* R, int size) {
 	int* vectorTemp = newArray(size*2);
   int i,j,k;
@@ -152,10 +149,10 @@ int* sort(int* arr){
     }
     return result;
 }
+// --------
 
 
-
-
+// --------
 double stopwatch() {
 	double sec;
 	struct timeval tv;
@@ -163,7 +160,6 @@ double stopwatch() {
 	sec = tv.tv_sec + tv.tv_usec/1000000.0;
 	return sec;
 }
-
 
 int main(int argc, char *argv[]) {
 
