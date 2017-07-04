@@ -141,7 +141,7 @@ int comparison_int(const void *e1, const void *e2) {
 
 int* sort(int* arr) {
     qsort(arr, scatteredSize, sizeof(int), comparison_int);
-    int* recive;
+    int* recive = newArray(scatteredSize);
     int* result = arr;
     int block = scatteredSize;
     for(int i = 1; i <= log2(paralelism); i++) {
@@ -154,6 +154,7 @@ int* sort(int* arr) {
 
           result = merge(arr, recive, block);
           block *= 2;
+	  recive = newArray(block);
           arr = result;
       }
     }
