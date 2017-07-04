@@ -19,8 +19,8 @@ N | 1M- 4 procesos | 2M - 4 procesos | 2M - 8 procesos | Secuencial
 
 ### Ejercicio 2
 
-N | 4 procesos | 8 procesos | Secuencial
---- | --- | --- | --- |
+N | 1M- 4 procesos | 2M - 4 procesos | 2M - 8 procesos | Secuencial
+--- | --- | --- | --- | --- |
 . | segundos | segundos | segundos |
 2^25 | x | x | x | 6.778 
 2^26 | x | x | x | 13.786 
