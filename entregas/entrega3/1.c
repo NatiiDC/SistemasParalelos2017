@@ -104,7 +104,7 @@ double* createAndScatter() {
 							matrix, scatteredSize, MPI_DOUBLE,
 							ROOT, WORLD);
 	double end = stopwatch();
-	communications =+ end - start;
+	communications += end - start;
 	return matrix;
 }
 
@@ -113,7 +113,7 @@ double* createAndBroadcast() {
 	double start = stopwatch();
 	MPI_Bcast(matrix, size, MPI_DOUBLE, ROOT, WORLD);
 	double end = stopwatch();
-	communications =+ end - start;
+	communications += end - start;
 	return matrix;
 }
 
@@ -134,7 +134,7 @@ double average(double* matrix) {
 	double start = stopwatch();
 	MPI_Allreduce(&partial, &total, 1, MPI_DOUBLE, MPI_SUM, WORLD);
 	double end = stopwatch();
-	communications =+ end - start;
+	communications += end - start;
 	return total / size;
 }
 
@@ -170,7 +170,7 @@ double* matrixSum(double* lhs, double* rhs) {
 						result, scatteredSize, MPI_DOUBLE,
 						ROOT, WORLD);
 	double end = stopwatch();
-	communications =+ end - start;
+	communications += end - start;
 	return result;
 }
 
@@ -232,7 +232,7 @@ int main(int argc, char *argv[]) {
 		double delta = end - start;
 		printf("total seconds: %f\n", delta);
 		printf("total communications: %f\n", communications);
-		printf("Overhead: %f %%\n", delta - communications);
+		printf("Overhead: %f %%\n", communications / delta);
 	}
 
 	if (shouldPrint()) {
