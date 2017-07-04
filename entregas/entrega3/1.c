@@ -17,7 +17,7 @@ const char* help ="\nCompilar en Linux Openmpi:\n\tmpicc -o 1 1.c -lm\nEjecutar 
 
 // Data globals.
 long long exponent, size, edge, scatteredSize, scatteredEdge;
-
+double communications = 0;
 // Id functions.
 int isRoot() {
 	return id == ROOT;
@@ -99,15 +99,21 @@ double* createAndScatter() {
 	}	else {
 		matrix = newMatrix(scatteredSize);
 	}
+	double start = stopwatch();
 	MPI_Scatter(matrix, scatteredSize, MPI_DOUBLE,
 							matrix, scatteredSize, MPI_DOUBLE,
 							ROOT, WORLD);
+	double end = stopwatch();
+	communications =+ end - start;
 	return matrix;
 }
 
 double* createAndBroadcast() {
 	double* matrix = createMatrix();
+	double start = stopwatch();
 	MPI_Bcast(matrix, size, MPI_DOUBLE, ROOT, WORLD);
+	double end = stopwatch();
+	communications =+ end - start;
 	return matrix;
 }
 
@@ -125,7 +131,10 @@ double average(double* matrix) {
 	for (long long i = 0; i < scatteredSize; i++) {
 		partial += matrix[i];
 	}
+	double start = stopwatch();
 	MPI_Allreduce(&partial, &total, 1, MPI_DOUBLE, MPI_SUM, WORLD);
+	double end = stopwatch();
+	communications =+ end - start;
 	return total / size;
 }
 
@@ -156,9 +165,12 @@ double* matrixSum(double* lhs, double* rhs) {
 	if (isRoot()) {
 		result = newMatrix(size);
 	}
+	double start = stopwatch();
 	MPI_Gather(lhs, scatteredSize, MPI_DOUBLE,
 						result, scatteredSize, MPI_DOUBLE,
 						ROOT, WORLD);
+	double end = stopwatch();
+	communications =+ end - start;
 	return result;
 }
 
@@ -219,6 +231,8 @@ int main(int argc, char *argv[]) {
 		double end = stopwatch();
 		double delta = end - start;
 		printf("total seconds: %f\n", delta);
+		printf("total communications: %f\n", communications);
+		printf("Overhead: %f %%\n", delta - communications);
 	}
 
 	if (shouldPrint()) {
