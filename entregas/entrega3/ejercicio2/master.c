@@ -3,6 +3,7 @@
 typedef struct {
 	int* base;
 	int* it;
+	int* end;
 } tUnordered;
 
 tUnordered uArray;
@@ -10,6 +11,7 @@ tUnordered uArray;
 void setupMaster() {
 	uArray.base = initArray();
 	uArray.it = uArray.base - scatteredSize;
+	uArray.end = uArray.base + size;
 	setupMergeArray();
 }
 
@@ -19,8 +21,7 @@ void cleanupMaster() {
 }
 
 int* nextArray() {
-	uArray.it += scatteredSize;
-	return (uArray.it < (uArray.base + size))? uArray.it : NULL;
+	return uArray.it += scatteredSize;
 }
 
 int processRequest(int task, int sender) {
@@ -28,7 +29,7 @@ int processRequest(int task, int sender) {
 		// Asking for work.
 		case NONE:
 		{
-			if (nextArray() != NULL) {
+			if (nextArray() != uArray.end) {
 				sendSort(sender, uArray.it);
 			} else {
 				sendMerge(sender);
@@ -63,13 +64,13 @@ int waitForWorker() {
 
 void master() {
 	setupMaster();
-	printf("MASTER started to run.\n");
+	// printf("MASTER started to run.\n");
 	int doneWorkers = 0;
 	do {
 		doneWorkers += waitForWorker();
 	} while(doneWorkers < (paralelism - 1));
-	merge();
-	printf("MASTER got EXIT\n");
+	//merge();
+	// printf("MASTER got EXIT\n");
 	// if (shouldPrint()) {
 	// 	printArray(mergedArray.base);
 	// }

@@ -7,7 +7,6 @@ long long receiveSize(int sender) {
 	long long size;
 	MPI_Status status;
 	MPI_Recv(&size, 1, MPI_LONG_LONG_INT, sender, T_SIZE, WORLD, &status);
-	printf("MERGED SIZE %lld\n", size);
 	return size;
 }
 
