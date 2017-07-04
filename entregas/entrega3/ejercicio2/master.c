@@ -63,12 +63,15 @@ int waitForWorker() {
 
 void master() {
 	setupMaster();
-	//printf("MASTER started to run.\n");
+	printf("MASTER started to run.\n");
 	int doneWorkers = 0;
 	do {
 		doneWorkers += waitForWorker();
 	} while(doneWorkers < (paralelism - 1));
-	//merge();
-	//printArray(mergedArray.base);
-	//cleanupMaster();
+	merge();
+	printf("MASTER got EXIT\n");
+	// if (shouldPrint()) {
+	// 	printArray(mergedArray.base);
+	// }
+	cleanupMaster();
 }

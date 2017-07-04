@@ -19,7 +19,7 @@ void sendMerged() {
 }
 
 void executeTask(int task) {
-	//printf("WORKER %d got task %s.\n", id, printTask(task));
+	printf("WORKER %d got task %s.\n", id, printTask(task));
 	switch (task) {
 		case SORT:
 		{
@@ -28,9 +28,11 @@ void executeTask(int task) {
 		}
 		case MERGE:
 		{
-			merge();
-			getLockFor(MERGE);
-			sendMerged();
+			if (mergedArray.arrayCount) {
+				merge();
+				getLockFor(MERGE);
+				sendMerged();
+			}
 			getLockFor(EXIT);
 			break;
 		}
@@ -44,12 +46,13 @@ void executeTask(int task) {
 }
 
 void worker() {
-	//printf("WORKER %d started to run.\n", id);
+	printf("WORKER %d started to run.\n", id);
 	setupWorker();
 	int currentTask = NONE;
 	do {
 		currentTask = getTask();
 		executeTask(currentTask);
 	} while (currentTask != EXIT);
-	//cleanupWorker();
+	printSizedArray(mergedArray.base, mergedArray.size);
+	cleanupWorker();
 }

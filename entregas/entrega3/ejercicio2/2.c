@@ -13,6 +13,7 @@ const char* help ="\nCompilar en Linux Openmpi:\n\tmpicc -o 1 1.c -lm\nEjecutar 
 long long exponent, jobs, size, scatteredSize;
 
 #include "common.c"
+#include "messages.c"
 #include "master.c"
 #include "worker.c"
 

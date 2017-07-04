@@ -41,6 +41,19 @@ int shouldPrint() {
 	return debug && isMaster();
 }
 
+const char* printTask(int task) {
+	switch (task) {
+		case EXIT:
+			return "EXIT";
+		case NONE:
+			return "NONE";
+		case SORT:
+			return "SORT";
+		case MERGE:
+			return "MERGE";
+	}
+}
+
 void printArray(int* array) {
 	for (long long i = 0; i < size; i++) {
 		printf("%d ", array[i]);
@@ -60,19 +73,6 @@ void printSizedArray(int* array, long long size) {
 		printf("%d ", array[i]);
 	}
 	printf("\n");
-}
-
-const char* printTask(int task) {
-	switch (task) {
-		case EXIT:
-			return "EXIT";
-		case NONE:
-			return "NONE";
-		case SORT:
-			return "SORT";
-		case MERGE:
-			return "MERGE";
-	}
 }
 
 double stopwatch() {
@@ -102,68 +102,13 @@ int* initArray() {
 	return array;
 }
 
-int* createArray() {
-	if (isMaster()) {
-		return initArray();
-	}
-	return newArray(scatteredSize);
-}
-
 int sortFunction(const void* a, const void* b) {
 	return ( *((int*)a) - *((int*)b) );
 }
 
-// Comunication Functions
-void sendSize(int receiver, long long size) {
-	MPI_Send(&size, 1, MPI_LONG_LONG_INT, receiver, T_SIZE, WORLD);
-}
-
-long long receiveSize(int sender) {
-	long long size;
-	MPI_Status status;
-	MPI_Recv(&size, 1, MPI_LONG_LONG_INT, sender, T_SIZE, WORLD, &status);
-	return size;
-}
-
-void sendArray(int receiver, int* array, long long size) {
-	MPI_Send(array, size, MPI_INT, receiver, T_ARRAY, WORLD);
-}
-
-int* receiveArray(int sender, long long size) {
-	int* array = newArray(size);
-	MPI_Status status;
-	MPI_Recv(array, size, MPI_INT, sender, T_ARRAY, WORLD, &status);
-	return array;
-}
-
-int getLockFor(int task) {
-	MPI_Send(&task, 1, MPI_INT, MASTER, T_LOCK, WORLD);
-}
-
-void sendTask(int receiver, int task) {
-	MPI_Send(&task, 1, MPI_INT, receiver, T_TASK, WORLD);
-}
-
-int getTask() {
-	int result;
-	MPI_Status status;
-	getLockFor(NONE);
-	MPI_Recv(&result, 1, MPI_INT, MASTER, T_TASK, WORLD, &status);
-	return result;
-}
-
-void sendSort(int receiver, int* array) {
-	sendTask(receiver, SORT);
-	sendArray(receiver, array, scatteredSize);
-}
-
-void sendMerge(int receiver) {
-	sendTask(receiver, MERGE);
-}
-
-
 // Multimerge functions
 #include <limits.h>
+#include <string.h>
 
 typedef struct {
 	int e;
@@ -178,12 +123,13 @@ typedef struct {
 } tArray;
 
 typedef struct {
+	tArray* sortedArrays;
 	long long maxArrays;
 	long long arrayCount;
-	long long size;
-	tArray* sortedArrays;
 	int* base;
 	int* it;
+	int* end;
+	long long size;
 } tMerged;
 
 tMerged mergedArray;
@@ -200,8 +146,8 @@ void saveArray(int* array, long long size) {
 	sortedArray->size = size;
 }
 
-void freeTArray(tArray array) {
-	free(array.base);
+void freeTArray(tArray* array) {
+	freeArray(array->base);
 }
 
 void setupMergeArray() {
@@ -215,50 +161,49 @@ void initMultiMerge() {
 	for (long long i = 0; i < mergedArray.arrayCount; i++) {
 		size += mergedArray.sortedArrays[i].size;
 	}
-	mergedArray.size = size;
-	mergedArray.base = malloc(sizeof(int) * mergedArray.size);
+	mergedArray.base = newArray(mergedArray.size);
 	mergedArray.it = mergedArray.base;
+	mergedArray.end = mergedArray.base + size;
+	mergedArray.size = size;
 }
 
 void cleanupMergeArray() {
 	for (long long i = 0; i < mergedArray.arrayCount; i++) {
-		freeTArray(mergedArray.sortedArrays[i]);
+		freeTArray(&(mergedArray.sortedArrays[i]));
 	}
+	freeArray(mergedArray.base);
 	free(mergedArray.sortedArrays);
-	free(mergedArray.base);
-}
-
-int endMultiMerge() {
-	for (long long i = 0; i < mergedArray.arrayCount; i++) {
-		tArray* array = &mergedArray.sortedArrays[i];
-		if(array->it != array->end) return 0;
-	}
-	return 1;
 }
 
 tMin findMin() {
 	tMin min = {INT_MAX, -1};
 	for (long long i = 0; i < mergedArray.arrayCount; i++) {
 		tArray* array = &mergedArray.sortedArrays[i];
-		if (array->it != array->end) {
-			if (*array->it <= min.e) {
-				min.e = *array->it;
-				min.index = i;
-			}
+		if (array->it < array->end && *array->it <= min.e) {
+			min.e = *array->it;
+			min.index = i;
 		}
 	}
-	mergedArray.sortedArrays[min.index].it++;
 	return min;
 }
 
 void saveMin(tMin min) {
-	*mergedArray.it = min.e;
+	if (min.index != -1) {
+		*mergedArray.it = min.e;
+		mergedArray.sortedArrays[min.index].it++;
+	}
 	mergedArray.it++;
 }
 
 void merge() {
 	initMultiMerge();
+	//if only one array copy.
+	if (mergedArray.arrayCount == 1) {
+		memcpy(mergedArray.base, mergedArray.sortedArrays[0].base, mergedArray.size);
+		return;
+	}
+	//else merge
 	do {
 		saveMin(findMin());
-	} while(!endMultiMerge());
+	} while(mergedArray.it < mergedArray.end);
 }
