@@ -15,7 +15,7 @@
 #define FALSE 0
 
 // World globals.
-int paralelism, id, debug;
+int paralelism, id, debug, iteraciones;
 MPI_Status status;
 const char* help ="\nCompilar en Linux Openmpi:\n\tmpicc -o 1 1.c -lm\nEjecutar en Openmpi:\n\tEn una sola maquina:\n\t\tmpirun -np <P> ejecutable <E>\n\t\t<P> = cantidad de procesos\n\t\t<E> = 2^E elementos del vector\n\tEn un cluster de máquinas:\n\t\tmpirun -np cantidadDeProcesos -machinefile archivoMaquinas ejecutable";
 
@@ -38,7 +38,7 @@ int shouldPrint() {
 	return debug && isRoot();
 }
 
-void printArray(int* arr){
+void printArray(int* arr, long long size){
   for (long long i = 0; i < size; i++) {
     printf("%d ", arr[i]);
   }
@@ -129,7 +129,7 @@ int comparison_function(const void *e1, const void *e2) {
     }
 }
 
-int* sort(int* arr){
+int* sort(int* arr) {
     qsort(arr, scatteredSize, sizeof(int), comparison_function);
     int* recive;
     int* result = arr;
@@ -150,6 +150,72 @@ int* sort(int* arr){
     return result;
 }
 // --------
+
+struct Map* pairsOfOccurrences(int *arrSort) {
+  int num = arrSort[0];
+  long occurrences = 0;
+  iteraciones = 0;
+
+  long sizeAlloc = 1;
+  int temp = num;
+  for (long long i = 0; i < scatteredSize; i++) {
+    if (temp != arrSort[i]){
+      sizeAlloc++;
+      temp = arrSort[i];
+    }
+  }
+
+  struct Map *map = malloc(sizeof(struct Map)*sizeAlloc);
+  for (long long i = 0; i < scatteredSize; i++) {
+    if (num != arrSort[i]) {
+      map[iteraciones].num = num;
+      map[iteraciones].occu = occurrences;
+
+      occurrences = 1;
+      num = arrSort[i];
+      iteraciones++;
+    } else {
+      occurrences++;
+    }
+  }
+  map[iteraciones].num = num;
+  map[iteraciones].occu = occurrences;
+
+  if (isRoot()){
+    // printf("Soy root(%d) y le envío a: %d | num: %d occ: %ld\n",id, id+1, num, occurrences);
+    MPI_Send(&num, 1, MPI_INT, id+1, 0, WORLD);
+    MPI_Send(&occurrences, 1, MPI_LONG, id+1, 0, WORLD);
+  } else {
+    // printf("Soy el process: %d y recibo de: %d | Tengo num: %d occ: %ld\n",id, id-1, num, occurrences);
+    MPI_Recv(&num, 1, MPI_INT, id-1, 0, WORLD, &status);
+    MPI_Recv(&occurrences, 1, MPI_LONG, id-1, 0, WORLD, &status);
+  }
+  if (id != paralelism-1 && !isRoot()) {
+    // printf("Soy el process: %d y le envío a: %d | num: %d occ: %ld\n",id, id+1, num, occurrences);
+    MPI_Send(&num, 1, MPI_INT, id+1, 0, WORLD);
+    MPI_Send(&occurrences, 1, MPI_LONG, id+1, 0, WORLD);
+  }
+
+  if (map[0].num == num) {
+    map[0].occu += occurrences;
+    occurrences = 0;
+  }
+
+  if (isRoot()){
+    // printf("Soy root(%d) y recibo de: %d\n",id, id+1);
+    MPI_Recv(&occurrences, 1, MPI_LONG, id+1, 0, WORLD, &status);
+  } else {
+  // printf("Soy el process: %d y le envío a: %d | occ: %ld\n",id, id-1, occurrences);
+    MPI_Send(&occurrences, 1, MPI_LONG, id-1, 0, WORLD);
+  }
+  if (id != paralelism-1 && !isRoot()) {
+  // printf("Soy el process: %d y recibo de: %d\n",id, id+1);
+    MPI_Recv(&occurrences, 1, MPI_LONG, id+1, 0, WORLD, &status);
+  }
+  map[iteraciones].occu = occurrences;
+
+  return map;
+}
 
 
 // --------
@@ -187,13 +253,22 @@ int main(int argc, char *argv[]) {
 		printf("exponent: %lld\nsize: %lld\n", exponent, size);
 	}
 
+  // sort
   int* arr = createArray();
-
   int* arrSort = sort(arr);
-  if (shouldPrint()) {
-    printf("result: \n");
-    printArray(arrSort);
+  freeArray(arr);
+
+  // creación los pares de ocurrencias
+  if (!isRoot()){
+    arrSort = newArray(scatteredSize);
   }
+  MPI_Scatter(arrSort, scatteredSize, MPI_INT,
+              arrSort, scatteredSize, MPI_INT,
+              ROOT, WORLD);
+
+  struct Map* pairs = pairsOfOccurrences(arrSort);
+
+  //ordenación de pares
 
   MPI_Finalize();
   return 0;
