@@ -1,4 +1,5 @@
 #include <sys/time.h>
+#include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -15,7 +16,8 @@
 #define FALSE 0
 
 // World globals.
-int paralelism, id, debug, iteraciones;
+int paralelism, id, debug;
+long iteraciones;
 MPI_Status status;
 const char* help ="\nCompilar en Linux Openmpi:\n\tmpicc -o 1 1.c -lm\nEjecutar en Openmpi:\n\tEn una sola maquina:\n\t\tmpirun -np <P> ejecutable <E>\n\t\t<P> = cantidad de procesos\n\t\t<E> = 2^E elementos del vector\n\tEn un cluster de máquinas:\n\t\tmpirun -np cantidadDeProcesos -machinefile archivoMaquinas ejecutable";
 
@@ -45,6 +47,13 @@ void printArray(int* arr, long long size){
   printf("\n");
 }
 
+void printMap(struct Map* map, long long size){
+  for (long long i = 0; i < size; i++) {
+    printf("(%d:%ld) ", map[i].num, map[i].occu);
+  }
+  printf("\n");
+}
+
 int* newArray(long long size) {
   return malloc(size * sizeof(int));
 }
@@ -55,9 +64,10 @@ void freeArray(int* array) {
 
 int* initArray(long long size){
   int* array = newArray(size);
-  // srand(time(NULL));
+  time_t t;
+  srand((unsigned)time(&t));
   for (size_t i = 0; i < size; i++) {
-    array[i] = rand() % 100;
+    array[i] = rand() % size/2;
   }
 
   return array;
@@ -104,7 +114,7 @@ int sender(int i) {
 
 int* merge(int* L, int* R, int size) {
 	int* vectorTemp = newArray(size*2);
-  int i,j,k;
+  long i,j,k;
 	i = 0; j = 0; k = 0;
 
 	while(i < size && j < size) {
@@ -117,7 +127,7 @@ int* merge(int* L, int* R, int size) {
 	return vectorTemp;
 }
 
-int comparison_function(const void *e1, const void *e2) {
+int comparison_int(const void *e1, const void *e2) {
     int a = *((int*) e1);
     int b = *((int*) e2);
     if (a < b) {
@@ -130,7 +140,7 @@ int comparison_function(const void *e1, const void *e2) {
 }
 
 int* sort(int* arr) {
-    qsort(arr, scatteredSize, sizeof(int), comparison_function);
+    qsort(arr, scatteredSize, sizeof(int), comparison_int);
     int* recive;
     int* result = arr;
     int block = scatteredSize;
@@ -202,21 +212,75 @@ struct Map* pairsOfOccurrences(int *arrSort) {
   }
 
   if (isRoot()){
-    // printf("Soy root(%d) y recibo de: %d\n",id, id+1);
     MPI_Recv(&occurrences, 1, MPI_LONG, id+1, 0, WORLD, &status);
   } else {
-  // printf("Soy el process: %d y le envío a: %d | occ: %ld\n",id, id-1, occurrences);
     MPI_Send(&occurrences, 1, MPI_LONG, id-1, 0, WORLD);
   }
   if (id != paralelism-1 && !isRoot()) {
-  // printf("Soy el process: %d y recibo de: %d\n",id, id+1);
     MPI_Recv(&occurrences, 1, MPI_LONG, id+1, 0, WORLD, &status);
   }
   map[iteraciones].occu = occurrences;
 
   return map;
 }
+// --------
 
+struct Map* mergeMap(struct Map *L, struct Map *R, long sizeL, long sizeR) {
+	struct Map *mapTemp = malloc(size * sizeof(struct Map));
+  int i,j,k;
+	i = 0; j = 0; k = 0;
+
+	while(i < sizeL && j < sizeR) {
+		if(L[i].occu > R[j].occu) mapTemp[k++] = L[i++];
+		else mapTemp[k++] = R[j++];
+	}
+	while(i < sizeL) mapTemp[k++] = L[i++];
+	while(j < sizeR) mapTemp[k++] = R[j++];
+
+	return mapTemp;
+}
+
+int comparison_map(const void *e1, const void *e2) {
+    struct Map a = *((struct Map*) e1);
+    struct Map b = *((struct Map*) e2);
+    if (a.occu > b.occu) {
+        return -1;
+    } else if (a.occu < b.occu) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+struct Map* sortPairs(struct Map *pairs){
+  qsort(pairs, iteraciones, sizeof(struct Map), comparison_map);
+  long reciveIt, block = iteraciones;
+  struct Map *mapRecive;
+  struct Map *result;
+  // printMap(pairs, block);
+
+  for(int i = 1; i <= log2(paralelism); i++) {
+    if (is_sender(i)) {
+      MPI_Send(&block, 1, MPI_LONG, receiver(i), 0, WORLD);
+      MPI_Send(pairs, block*(sizeof(struct Map)), MPI_CHAR, receiver(i), 0, WORLD);
+    } else if (is_receiver(i)) {
+      MPI_Recv(&reciveIt, 1, MPI_LONG, sender(i), 0, WORLD, &status);
+      mapRecive = malloc(reciveIt*(sizeof(struct Map)));
+      MPI_Recv(mapRecive, reciveIt*(sizeof(struct Map)), MPI_CHAR, sender(i), 0, WORLD, &status);
+      result = mergeMap(pairs, mapRecive, block, reciveIt);
+      block += reciveIt;
+      pairs = result;
+    }
+  }
+
+  if (isRoot()) {
+    iteraciones = block;
+    // printf("%ld\n", block);
+    // printMap(pairs, block);
+  }
+
+  return pairs;
+}
 
 // --------
 double stopwatch() {
@@ -253,12 +317,17 @@ int main(int argc, char *argv[]) {
 		printf("exponent: %lld\nsize: %lld\n", exponent, size);
 	}
 
+  double start;
+	if (isRoot()) {
+		start = stopwatch();
+	}
+
   // sort
   int* arr = createArray();
   int* arrSort = sort(arr);
   freeArray(arr);
 
-  // creación los pares de ocurrencias
+  // pares de ocurrencias
   if (!isRoot()){
     arrSort = newArray(scatteredSize);
   }
@@ -266,9 +335,25 @@ int main(int argc, char *argv[]) {
               arrSort, scatteredSize, MPI_INT,
               ROOT, WORLD);
 
-  struct Map* pairs = pairsOfOccurrences(arrSort);
+  struct Map *pairs = pairsOfOccurrences(arrSort);
+  struct Map *pairsSort = sortPairs(pairs);
 
-  //ordenación de pares
+  int sizeArrOccu = (iteraciones <= 100)?iteraciones:100;
+  int mostOccurrences[sizeArrOccu];
+  for (int i = 0; i < sizeArrOccu; i++) {
+    mostOccurrences[i] = pairsSort[i].num;
+  }
+
+  if (isRoot()) {
+    double end = stopwatch();
+    double delta = end - start;
+    printf("total seconds: %f\n", delta);
+  }
+
+  if (shouldPrint()){
+    printf("Cantidad de pares: %d\n", sizeArrOccu);
+    printArray(mostOccurrences, sizeArrOccu);
+  }
 
   MPI_Finalize();
   return 0;
