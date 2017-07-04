@@ -13,7 +13,7 @@
 
 // World globals.
 int paralelism, id, debug;
-const char* help ="\nCompilar en Linux Openmpi:\n\tmpicc -o 1 1.c -lm\nEjecutar en Openmpi:\n\tEn una sola maquina:\n\t\tmpirun -np <P> ejecutable <E>\n\t\t<P> = cantidad de procesos\n\t\t<E> = 2^E elementos del vector\n\tEn un cluster de máquinas:\n\t\tmpirun -np cantidadDeProcesos -machinefile archivoMaquinas ejecutable";
+const char* help ="\nCompilar en Linux Openmpi:\n\tmpicc -o 1 1.c -lm\nEjecutar en Openmpi:\n\tEn una sola maquina:\n\t\tmpirun -np <P> ejecutable <E>\n\t\t<P> = cantidad de procesos\n\t\t<E> = 2^E elementos del lado de la matriz\n\tEn un cluster de máquinas:\n\t\tmpirun -np <P> -machinefile archivoMaquinas ejecutable <E>";
 
 // Data globals.
 long long exponent, size, edge, scatteredSize, scatteredEdge;
