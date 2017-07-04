@@ -11,8 +11,12 @@
 #define WORLD MPI_COMM_WORLD
 #endif
 
+#define TRUE 1
+#define FALSE 0
+
 // World globals.
 int paralelism, id, debug;
+MPI_Status status;
 const char* help ="\nCompilar en Linux Openmpi:\n\tmpicc -o 1 1.c -lm\nEjecutar en Openmpi:\n\tEn una sola maquina:\n\t\tmpirun -np <P> ejecutable <E>\n\t\t<P> = cantidad de procesos\n\t\t<E> = 2^E elementos del vector\n\tEn un cluster de máquinas:\n\t\tmpirun -np cantidadDeProcesos -machinefile archivoMaquinas ejecutable";
 
 // Data globals.
@@ -35,7 +39,7 @@ int shouldPrint() {
 }
 
 void printArray(int* arr){
-  for (size_t i = 0; i < size; i++) {
+  for (long long i = 0; i < size; i++) {
     printf("%d ", arr[i]);
   }
   printf("\n");
@@ -53,7 +57,7 @@ int* initArray(long long size){
   int* array = newArray(size);
   // srand(time(NULL));
   for (size_t i = 0; i < size; i++) {
-    array[i] = rand() % size/2;
+    array[i] = rand() % 100;
   }
 
   return array;
@@ -72,30 +76,47 @@ int* createArray() {
   return array;
 }
 
-int* merge(int* arr) {
-	int* vectorTemp = newArray(size);
-	long actLeft = 0;
-	long actRight = size / 2;
-	for(long i=0; i<size; i++){
-		if (actLeft == ( size / 2)) {
-			vectorTemp[i] = arr[actRight];
-			actRight++;
-		}
-		else {
-			if (actRight == size) {
-				vectorTemp[i] = arr[actLeft];
-				actLeft++;
-			} else {
-				if (arr[actLeft] < arr[actRight]) {
-					vectorTemp[i] = arr[actLeft];
-					actLeft++;
-				} else {
-					vectorTemp[i] = arr[actRight];
-					actRight++;
-				}
-			}
-		}
+// --------
+
+int is_receiver(int i) {
+  if ((id % (int)pow(2, i)) == 0) {
+    return TRUE;
+  } else {
+    return FALSE;
+  }
+}
+
+int is_sender(int i) {
+  if ((id % (int)pow(2, i)) == (int)pow(2, i-1)) {
+    return TRUE;
+  } else {
+    return FALSE;
+  }
+}
+
+int receiver(int i) {
+  return (int)(id-(pow(2, i-1)));
+}
+
+int sender(int i) {
+  return (int)(id+(pow(2, i-1)));
+}
+
+// --------
+
+
+int* merge(int* L, int* R, int size) {
+	int* vectorTemp = newArray(size*2);
+  int i,j,k;
+	i = 0; j = 0; k = 0;
+
+	while(i < size && j < size) {
+		if(L[i] < R[j]) vectorTemp[k++] = L[i++];
+		else vectorTemp[k++] = R[j++];
 	}
+	while(i < size) vectorTemp[k++] = L[i++];
+	while(j < size) vectorTemp[k++] = R[j++];
+
 	return vectorTemp;
 }
 
@@ -113,15 +134,25 @@ int comparison_function(const void *e1, const void *e2) {
 
 int* sort(int* arr){
     qsort(arr, scatteredSize, sizeof(int), comparison_function);
-    MPI_Gather( arr, scatteredSize, MPI_INT,
-                arr, scatteredSize, MPI_INT,
-                ROOT, WORLD);
-    if (isRoot()) {
-      printArray(arr);
-      int* result = merge(arr);
-      printArray(result);
+    int* recive;
+    int* result = arr;
+    int block = scatteredSize;
+    for(int i = 1; i <= log2(paralelism); i++) {
+      if (is_sender(i)) {
+        // printf("Soy: %d - Mando a: %d\n",id, receiver(i) );
+          MPI_Send(arr, block, MPI_INT, receiver(i), 0, MPI_COMM_WORLD);
+      } else if (is_receiver(i)) {
+        // printf("Soy: %d - Recibo de: %d\n",id, sender(i) );
+          MPI_Recv(recive, block, MPI_INT, sender(i), 0, MPI_COMM_WORLD, &status);
+
+          result = merge(arr, recive, block);
+          block *= 2;
+          arr = result;
+      }
     }
+    return result;
 }
+
 
 
 
@@ -162,12 +193,11 @@ int main(int argc, char *argv[]) {
 
   int* arr = createArray();
 
-  // if (shouldPrint()) {
-	// 	printf("result: \n");
-	// 	printArray(arr);
-	// }
-
   int* arrSort = sort(arr);
+  if (shouldPrint()) {
+    printf("result: \n");
+    printArray(arrSort);
+  }
 
   MPI_Finalize();
   return 0;
