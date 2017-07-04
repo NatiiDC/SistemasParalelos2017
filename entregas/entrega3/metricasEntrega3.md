@@ -1,6 +1,13 @@
-### Ejercicio 1
+# Entrega Nro. 3
+## Programación con memoria distribuida
 
-1 maquina
+#### Alumnos:
+* Aparicio Natalia Elizabeth - 12667/7
+* Eusebi Cirano - 12469/2
+
+---
+
+### Ejercicio 1
 
 N | 1M- 4 procesos | 2M - 4 procesos | 2M - 8 procesos | Secuencial
 --- | --- | --- | --- | ---
