@@ -80,6 +80,13 @@ N | 1M- 4 procesos | 2M - 4 procesos | 2M - 8 procesos | 4 PThread |Secuencial
 
 ### Ejercicio 3
 
+Se utilizó el algoritmo implementado en **2** para ordenar el arreglo de menor a mayor.  
+Se dividió el arreglo ordenado en P partes y se comunicó con **Scatter**.  
+Se compactaron los arreglos a pares de _(elemento, ocurrencias)_.  
+Se reordenó el arreglo a partir de ocurrencias de mayor a menor con qsort(glibc).
+Se utilizó una comunicación uno a uno para sincronizar los elementos repetidos de los bordes de los arreglos.  
+Se utilizó una comunicación uno a uno para unir las partes como se realizó en **2**
+El nodo raíz obtuvo los primeros 100 elementos.
 
 (comunicaciones)  
 
@@ -94,15 +101,15 @@ N | 1M- 4 procesos | 2M - 4 procesos | 2M - 8 procesos | Secuencial
 
 N | 1M- 4 procesos | 2M - 4 procesos | 2M - 8 procesos | Secuencial
 --- | --- | --- | --- | ---
-2^25 | --- | --- | --- | ---
-2^26 | --- | --- | --- | ---
-2^27 | --- | --- | --- | ---
+2^25 | 2.4330 (2.5127) | 1.6213 (2.6366) | 1.9956 (3.8285) | 1
+2^26 | 2.4710 (2.5331) | 1.6888 (2.7173) | 2.0874 (3.9530) | 1
+2^27 | 2.5048 (2.5721) | 1.7214 (2.7381) | 2.1394 (3.9999)| 1
 
 
 **Eficiencia**  
 
 N | 1M- 4 procesos | 2M - 4 procesos | 2M - 8 procesos | Secuencial
 --- | --- | --- | --- | --- |
-2^25 | --- | --- | --- | ---
-2^26 | --- | --- | --- | ---
-2^27 | --- | --- | --- | ---
+2^25 | 0.6082 (0.6281) | 0.4053 (0.6591) | 0.2494 (0.4785) | 1
+2^26 | 0.6177 (0.6332) | 0.4222 (0.6793) | 0.2609 (0.4941) | 1
+2^27 | 0.6262 (0.6430) | 0.4303 (0.6845) | 0.2674 (0.9999) | 1
